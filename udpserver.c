@@ -22,11 +22,45 @@ int main(int argc, char **argv) {
          sizeof(serveraddr));//ties the socket to the address
     while (1) { //constantly receiving
         socklen_t len = sizeof(clientaddr);
-        char line[5000];
-        int32_t firstNum = 0;
-        int32_t secondNumber = 0;
+        char line[5000] = "";
         recvfrom(sockfd, line, 5000, 0,
                  (struct sockaddr *) &clientaddr, &len);//client info added to clientaddr
+
+        //Wait for the client to make a request
+        if(strcmp(line, "") != 0) {
+            //Array to  track if the desired window is available
+            int senderWindow[5] = {0,0,0,0,0};
+            //Tracks the current window in the queue
+            int windowCounter = 0;
+            //Track the current sequence count
+            int totalCountSent = 0;
+            //fileName set to the udpclient entry
+            char* fileName = line;
+            FILE* file;
+            char *str[5];
+            file = fopen(fileName, "r");
+            fgets(str[windowCounter], 255, file);
+
+            do {
+                if (senderWindow[windowCounter] == 0) {
+                    senderWindow[windowCounter] = 1;
+                    windowCounter++;
+                    sendto(sockfd, str[windowCounter], 255, 0,
+                           (struct sockaddr *) &clientaddr, sizeof(clientaddr));
+                    totalCountSent++;
+                    fgets(str[windowCounter], 255, file);
+                    printf("%s", str[windowCounter]);
+                } else {
+                    sendto(sockfd, str[windowCounter], 255, 0,
+                           (struct sockaddr *) &clientaddr, sizeof(clientaddr));
+                }
+            } while (str != EOF);
+        }
+            //stringArray[counter] = strndup(str, 255);
+            //counter++;
+                /*
+        int32_t firstNum = 0;
+        int32_t secondNumber = 0;
         memcpy(&firstNum, &line[0], 4);
         memcpy(&secondNumber, &line[4], 4);
         printf("Got from client: %d\n"PRId32, firstNum);
@@ -43,6 +77,6 @@ int main(int argc, char **argv) {
             memcpy(&line, &result, sizeof(int));
             sendto(sockfd, line, sizeof(int), 0,
                    (struct sockaddr *) &clientaddr, sizeof(clientaddr));
-        }
+        }*/
     }
 }

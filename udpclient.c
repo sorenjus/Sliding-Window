@@ -37,9 +37,12 @@ int main(int argc, char** argv){
   serveraddr.sin_port=htons(portNum);
   serveraddr.sin_addr.s_addr=inet_addr(&addrIP);
 
-  printf("Enter a number: ");
+  //printf("Enter a number: ");
   char line[5000];
-  int32_t firstNum = 5; //guarantees a 32 bit integer
+  scanf("Enter a file name : %s", line);
+  sendto(sockfd,&line, strlen(line),0,
+           (struct sockaddr*)&serveraddr,sizeof(serveraddr));
+  /*int32_t firstNum = 5; //guarantees a 32 bit integer
   int32_t secondNum = 1;
   int32_t overflowCheck = 0;
   int result = 0;
@@ -50,7 +53,8 @@ int main(int argc, char** argv){
     memcpy(&line[4], &secondNum, 4);
   sendto(sockfd,line,sizeof(int) * 2,0,
 	 (struct sockaddr*)&serveraddr,sizeof(serveraddr));
-
+*/
+  /*
     while(1) { //constantly receiving
         socklen_t len = sizeof(serveraddr);
         char line[5000] = "\0";
@@ -68,8 +72,9 @@ int main(int argc, char** argv){
             printf("Got from server: %d\n"PRId32, result);
         }
         break;
-    }
 
+    }
+*/
     close(sockfd);
     
   return 0;
