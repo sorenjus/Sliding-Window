@@ -28,18 +28,24 @@ int main(int argc, char** argv){
   char addrIP[20] = "";
   int portNum = 9876;
 
-  printf("Enter an IP Address :");
-  fgets(&addrIP,5000,stdin);
+  // Setting up IP, Socket information, and port number
+  //printf("Enter an IP Address : \n");
+  //fgets(addrIP,5000,stdin);
   //printf("Enter a port number :");
   //scanf("%d%*c", &portNum);
   struct sockaddr_in serveraddr;
   serveraddr.sin_family=AF_INET;
   serveraddr.sin_port=htons(portNum);
-  serveraddr.sin_addr.s_addr=inet_addr(&addrIP);
-
-  //printf("Enter a number: ");
+  //serveraddr.sin_addr.s_addr=inet_addr(addrIP);
+  serveraddr.sin_addr.s_addr=inet_addr("127.0.0.1");
+  
+  // Asking user for a filename and scanning
+  printf("Enter a filename to retrieve: \n");
   char line[5000];
-  scanf("Enter a file name : %s", line);
+  scanf("%s", line);
+  printf("Retrieving %s...\n", line);
+
+  // Send to server
   sendto(sockfd,&line, strlen(line),0,
            (struct sockaddr*)&serveraddr,sizeof(serveraddr));
   /*int32_t firstNum = 5; //guarantees a 32 bit integer
