@@ -55,6 +55,7 @@ int main(int argc, char **argv)
         // printf("%s\n", &windowValue[windowCounter]);
         do
         {
+            if(senderWindow[windowCounter] == 0){
             // if (totalCountSent < 5)
             // {
             // printf("%s\n", &windowValue[windowCounter]);
@@ -68,26 +69,25 @@ int main(int argc, char **argv)
                    (struct sockaddr *)&clientaddr, sizeof(clientaddr));
             windowCounter++;
             totalCountSent++;
-
             fgets(&windowValue[windowCounter], 255, file);
-            // }
-            // else
-            // {
-            //     printf("%s\n", &windowValue[windowCounter]);
-            //     sendto(sockfd, &windowValue[windowCounter], 255, 0,
-            //            (struct sockaddr *)&clientaddr, sizeof(clientaddr));
-            //     printf("Sent packet at window %d\n", windowCounter);
-            //     senderWindow[windowCounter] = 1;
-            //     senderReceipt[windowCounter] = 1;
-            //     senderReceipt[5] = windowCounter;
-            //     sendto(sockfd, senderReceipt, 6, 0,
-            //            (struct sockaddr *)&clientaddr, sizeof(clientaddr));
-            //     totalCountSent++;
-            //     windowCounter++;
-            // }
+             }
+             else
+             {
+                 printf("%s\n", &windowValue[windowCounter]);
+                 sendto(sockfd, &windowValue[windowCounter], 255, 0,
+                        (struct sockaddr *)&clientaddr, sizeof(clientaddr));
+                 printf("Sent packet at window %d\n", windowCounter);
+                 senderWindow[windowCounter] = 1;
+                 senderReceipt[windowCounter] = 1;
+                 senderReceipt[5] = windowCounter;
+                 sendto(sockfd, senderReceipt, 6, 0,
+                        (struct sockaddr *)&clientaddr, sizeof(clientaddr));
+                 totalCountSent++;
+                 windowCounter++;
+            }
             recvfrom(sockfd, clientAcknowledgements, 24, 0,
                      (struct sockaddr *)&clientaddr, &len);
-
+            senderWindow[clientAcknowledgements[5]] = 0;
             /*resends messages when no acknowledgements
              * if(totalCountSent == 10){
                 break;
