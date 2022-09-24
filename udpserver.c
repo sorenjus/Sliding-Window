@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <inttypes.h>
+#include <stdlib.h>
 
 int main(int argc, char **argv)
 {
@@ -30,10 +31,11 @@ int main(int argc, char **argv)
 
         printf("Received from client: %s\n", line);
         // Wait for the client to make a request
-        if (strcmp(line, "") != 0) {
+        if (strcmp(line, "") != 0)
+        {
             // Array to  track if the desired window is available
             int senderWindow[5] = {0, 0, 0, 0, 0};
-            char *windowValue[5];
+            char windowValue[255];
             // Tracks the current window in the queue
             int windowCounter = 0;
             // Track the current sequence count
@@ -41,29 +43,38 @@ int main(int argc, char **argv)
             // fileName set to the udpclient entry
             char *fileName = line;
             FILE *file;
-            char str; // maybe the source of our seg fault?
-            file = fopen(fileName, "a+");
-            fgets(windowValue[windowCounter], 255, file);
+            file = fopen(fileName, "r");
+            if (file == NULL)
+            {
+                printf("Error! Could not open file\n");
+                exit(-1);
+            }
+            fgets(&windowValue[windowCounter], 255, file);
 
-            do {
-                //does it enter the do loop? printf("do loop\n");
-                if (senderWindow[windowCounter] == 0) {
+            do
+            {
+                // does it enter the do loop? printf("do loop\n");
+                if (senderWindow[windowCounter] == 0)
+                {
                     senderWindow[windowCounter] = 1;
                     windowCounter++;
-                    //test do loop iterations printf("%d", windowCounter);
+                    // test do loop iterations printf("%d", windowCounter);
 
-                    if(windowCounter == 5){
+                    if (windowCounter == 5)
+                    {
                         windowCounter = 0;
                     }
 
-                    sendto(sockfd, windowValue[windowCounter], 255, 0,
-                           (struct sockaddr *) &clientaddr, sizeof(clientaddr));
+                    sendto(sockfd, &windowValue[windowCounter], 255, 0,
+                           (struct sockaddr *)&clientaddr, sizeof(clientaddr));
                     totalCountSent++;
-                    fgets(windowValue[windowCounter], 255, file);
-                } else {
-                    printf("%d", windowCounter);
-                    sendto(sockfd, windowValue[windowCounter], 255, 0,
-                           (struct sockaddr *) &clientaddr, sizeof(clientaddr));
+                    fgets(&windowValue[windowCounter], 255, file);
+                }
+                else
+                {
+                    printf("%d\n", windowValue[windowCounter]);
+                    sendto(sockfd, &windowValue[windowCounter], 255, 0,
+                           (struct sockaddr *)&clientaddr, sizeof(clientaddr));
                     totalCountSent++;
                 }
                 /*resends messages when no acknowledgements
