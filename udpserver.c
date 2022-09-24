@@ -22,88 +22,82 @@ int main(int argc, char **argv)
 
     bind(sockfd, (struct sockaddr *)&serveraddr,
          sizeof(serveraddr)); // ties the socket to the address
-    while (1)
-    { // constantly receiving
-        socklen_t len = sizeof(clientaddr);
-        char line[5000] = "";
-        recvfrom(sockfd, line, 5000, 0,
-                 (struct sockaddr *)&clientaddr, &len); // client info added to clientaddr
+    int senderWindow[5] = {0, 0, 0, 0, 0};
+    int senderReceipt[6] = {0, 0, 0, 0, 0, 0};
+    int clientAcknowledgements[6];
+    char windowValue[255];
+    // Tracks the current window in the queue
+    int windowCounter = 0;
+    // Track the current sequence count
+    int totalCountSent = 0;
+    // fileName set to the udpclient entry
+    socklen_t len = sizeof(clientaddr);
+    char line[5000] = "";
+    recvfrom(sockfd, line, 5000, 0,
+             (struct sockaddr *)&clientaddr, &len); // client info added to clientaddr
+    char *fileName = line;
+    FILE *file;
+    file = fopen(fileName, "r+");
+    if (file == NULL)
+    {
+        printf("Error! Could not open file\n");
+        exit(-1);
+    }
+    // while (1)
+    // { // constantly receiving
 
-        printf("Received from client: %s\n", line);
-        // Wait for the client to make a request
-        if (strcmp(line, "") != 0)
+    printf("Received from client: %s\n", line);
+    // Wait for the client to make a request
+    if (strcmp(line, "") != 0)
+    {
+        // Array to  track if the desired window is available
+        fgets(&windowValue[windowCounter], 255, file);
+        // printf("%s\n", &windowValue[windowCounter]);
+        do
         {
-            // Array to  track if the desired window is available
-            int senderWindow[5] = {0, 0, 0, 0, 0};
-            char windowValue[255];
-            // Tracks the current window in the queue
-            int windowCounter = 0;
-            // Track the current sequence count
-            int totalCountSent = 0;
-            // fileName set to the udpclient entry
-            char *fileName = line;
-            FILE *file;
-            file = fopen(fileName, "r");
-            if (file == NULL)
-            {
-                printf("Error! Could not open file\n");
-                exit(-1);
-            }
+            // if (totalCountSent < 5)
+            // {
+            // printf("%s\n", &windowValue[windowCounter]);
+            sendto(sockfd, &windowValue[windowCounter], 255, 0,
+                   (struct sockaddr *)&clientaddr, sizeof(clientaddr));
+            printf("%s\n", &windowValue[windowCounter]);
+            senderWindow[windowCounter] = 1;
+            senderReceipt[windowCounter] = 1;
+            senderReceipt[5] = windowCounter;
+            sendto(sockfd, senderReceipt, 6, 0,
+                   (struct sockaddr *)&clientaddr, sizeof(clientaddr));
+            windowCounter++;
+            totalCountSent++;
+
             fgets(&windowValue[windowCounter], 255, file);
+            // }
+            // else
+            // {
+            //     printf("%s\n", &windowValue[windowCounter]);
+            //     sendto(sockfd, &windowValue[windowCounter], 255, 0,
+            //            (struct sockaddr *)&clientaddr, sizeof(clientaddr));
+            //     printf("Sent packet at window %d\n", windowCounter);
+            //     senderWindow[windowCounter] = 1;
+            //     senderReceipt[windowCounter] = 1;
+            //     senderReceipt[5] = windowCounter;
+            //     sendto(sockfd, senderReceipt, 6, 0,
+            //            (struct sockaddr *)&clientaddr, sizeof(clientaddr));
+            //     totalCountSent++;
+            //     windowCounter++;
+            // }
+            recvfrom(sockfd, clientAcknowledgements, 6, 0,
+                     (struct sockaddr *)&clientaddr, &len);
 
-            do
-            {
-                // does it enter the do loop? printf("do loop\n");
-                if (senderWindow[windowCounter] == 0)
-                {
-                    senderWindow[windowCounter] = 1;
-                    windowCounter++;
-                    // test do loop iterations printf("%d", windowCounter);
+            /*resends messages when no acknowledgements
+             * if(totalCountSent == 10){
+                break;
+            }*/
+        } while (fgets(&windowValue[windowCounter], 255, file));
+        fclose(file);
+        // }
 
-                    if (windowCounter == 5)
-                    {
-                        windowCounter = 0;
-                    }
+        //} while (windowValue[windowCounter] != EOF);
 
-                    sendto(sockfd, &windowValue[windowCounter], 255, 0,
-                           (struct sockaddr *)&clientaddr, sizeof(clientaddr));
-                    totalCountSent++;
-                    fgets(&windowValue[windowCounter], 255, file);
-                }
-                else
-                {
-                    printf("%d\n", windowValue[windowCounter]);
-                    sendto(sockfd, &windowValue[windowCounter], 255, 0,
-                           (struct sockaddr *)&clientaddr, sizeof(clientaddr));
-                    totalCountSent++;
-                }
-                /*resends messages when no acknowledgements
-                 * if(totalCountSent == 10){
-                    break;
-                }*/
-            } while (windowValue[windowCounter] != EOF);
-        }
-        // stringArray[counter] = strndup(str, 255);
-        // counter++;
-        /*
-int32_t firstNum = 0;
-int32_t secondNumber = 0;
-memcpy(&firstNum, &line[0], 4);
-memcpy(&secondNumber, &line[4], 4);
-printf("Got from client: %d\n"PRId32, firstNum);
-printf("Got from client: %d\n"PRId32, secondNumber);
-int32_t result = firstNum + secondNumber;
-int32_t overflow = 0;
-if ((firstNum > 0 && secondNumber > 0 && result < 0) || (firstNum < 0 && secondNumber < 0 && result > 0)) {
-    overflow = 1;
-    memcpy(&line[4], &overflow, sizeof(int));
-    sendto(sockfd, line, (sizeof(int) * 2), 0,
-           (struct sockaddr *) &clientaddr, sizeof(clientaddr));
-}
-else {
-    memcpy(&line, &result, sizeof(int));
-    sendto(sockfd, line, sizeof(int), 0,
-           (struct sockaddr *) &clientaddr, sizeof(clientaddr));
-}*/
+        // close(sockfd);
     }
 }
