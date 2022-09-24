@@ -6,6 +6,9 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <inttypes.h>
+#include <stdbool.h>
+
+bool running = true;
 
 int main(int argc, char **argv)
 {
@@ -59,48 +62,63 @@ int main(int argc, char **argv)
 
   do
   {
+    if (acknowledgementsSent == 5 && windowCounter == 5)
+    {
+      windowCounter = 0;
+      acknowledgementsSent = 0;
+      memset(acknowledgements, 0, 6 * sizeof(int));
+      memset(receivingWindow, 0, 5 * sizeof(int));
+    }
     recvfrom(sockfd, serverResponse, 255, 0,
              (struct sockaddr *)&serveraddr, &len);
-    printf("Server Response: %s\n", serverResponse);
     recvfrom(sockfd, senderReceipt, 24, 0,
              (struct sockaddr *)&serveraddr, &len);
-    printf("Received packet\n");
     fputs(serverResponse, file);
-    // Now we have the sender receipt array
-    // If the sender receipt matches the order we were expecting
-    // if (windowCounter == senderReceipt[5] && senderReceipt[windowCounter] == 1)
-    // {
-    printf("Window Counter: %d\n", windowCounter);
-    printf("Sender Receipt for index 5: %d\n", senderReceipt[5]);
-    printf("Sender receipt at counter: %d\n", senderReceipt[windowCounter]);
-    receivingWindow[windowCounter] = 1;
-    acknowledgements[windowCounter] = 1;
-    // This array is of length 6.  0-4 for the acknowledgements and the 5th
-    // spot for the index that was just acknowledged.
-    acknowledgements[5] = windowCounter;
-    sendto(sockfd, acknowledgements, 24, 0,
-           (struct sockaddr *)&serveraddr, sizeof(serveraddr));
-    acknowledgementsSent++;
-    windowCounter++;
-    // }
-    // what happens when the sender sends a packet in a different order
-    // else
-    // {
-    //   printf("Window Counter: %d\n", windowCounter);
-    //   printf("Sender Receipt: %d\n", senderReceipt[5]);
-    //   printf("Sender receipt at counter: %d\n", senderReceipt[windowCounter]);
+    printf("Received packet\n");
+    printf("Server Response: %s\n", serverResponse);
+    if (!strcmp(serverResponse, "EOF"))
+    {
+      printf("Running now false\n");
+      running = false;
+    }
+    else
+    {
 
-    //   windowCounter = senderReceipt[5];
-    //   receivingWindow[windowCounter] = 1;
-    //   acknowledgements[windowCounter] = 1;
-    //   acknowledgements[5] = windowCounter;
-    //   sendto(sockfd, acknowledgements, sizeof(acknowledgements), 0,
-    //          (struct sockaddr *)&serveraddr, sizeof(serveraddr));
-    //   acknowledgementsSent++;
-    //   windowCounter++;
-    // }
-    // windowCounter++;
-  } while (windowCounter < 5);
+      // Now we have the sender receipt array
+      // If the sender receipt matches the order we were expecting
+      if (windowCounter == senderReceipt[5] && senderReceipt[windowCounter] == 1)
+      {
+        printf("Window Counter: %d\n", windowCounter);
+        printf("Sender Receipt for index 5: %d\n", senderReceipt[5]);
+        printf("Sender receipt at counter: %d\n", senderReceipt[windowCounter]);
+        receivingWindow[windowCounter] = 1;
+        acknowledgements[windowCounter] = 1;
+        // This array is of length 6.  0-4 for the acknowledgements and the 5th
+        // spot for the index that was just acknowledged.
+        acknowledgements[5] = windowCounter;
+        sendto(sockfd, acknowledgements, 24, 0,
+               (struct sockaddr *)&serveraddr, sizeof(serveraddr));
+        acknowledgementsSent++;
+        windowCounter++;
+      }
+      else
+      {
+        printf("Window Counter: %d\n", windowCounter);
+        printf("Sender Receipt: %d\n", senderReceipt[5]);
+        printf("Sender receipt at counter: %d\n", senderReceipt[windowCounter]);
+
+        windowCounter = senderReceipt[5];
+        receivingWindow[windowCounter] = 1;
+        acknowledgements[windowCounter] = 1;
+        acknowledgements[5] = windowCounter;
+        sendto(sockfd, acknowledgements, 24, 0,
+               (struct sockaddr *)&serveraddr, sizeof(serveraddr));
+        acknowledgementsSent++;
+        windowCounter++;
+      }
+      // windowCounter++;
+    }
+  } while (running);
 
   fclose(file);
   close(sockfd);
