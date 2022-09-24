@@ -24,7 +24,7 @@ int main(int argc, char **argv)
          sizeof(serveraddr)); // ties the socket to the address
     int senderWindow[5] = {0, 0, 0, 0, 0};
     int senderReceipt[6] = {0, 0, 0, 0, 0, 0};
-    int clientAcknowledgements[6];
+    int clientAcknowledgements[6] = {0, 0, 0, 0, 0, 0};
     char windowValue[255];
     // Tracks the current window in the queue
     int windowCounter = 0;
@@ -64,7 +64,7 @@ int main(int argc, char **argv)
             senderWindow[windowCounter] = 1;
             senderReceipt[windowCounter] = 1;
             senderReceipt[5] = windowCounter;
-            sendto(sockfd, senderReceipt, 6, 0,
+            sendto(sockfd, senderReceipt, 24, 0,
                    (struct sockaddr *)&clientaddr, sizeof(clientaddr));
             windowCounter++;
             totalCountSent++;
@@ -85,7 +85,7 @@ int main(int argc, char **argv)
             //     totalCountSent++;
             //     windowCounter++;
             // }
-            recvfrom(sockfd, clientAcknowledgements, 6, 0,
+            recvfrom(sockfd, clientAcknowledgements, 24, 0,
                      (struct sockaddr *)&clientaddr, &len);
 
             /*resends messages when no acknowledgements

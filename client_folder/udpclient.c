@@ -21,7 +21,7 @@ int main(int argc, char **argv)
   int windowCounter = 0, acknowledgementsSent = 0;
   int receivingWindow[5] = {0, 0, 0, 0, 0};
   int acknowledgements[6] = {0, 0, 0, 0, 0, 0};
-  int senderWindow[5], senderReceipt[6];
+  int senderReceipt[6];
   // Holds server response
   char serverResponse[255];
   // Holds the file name for writing
@@ -62,45 +62,44 @@ int main(int argc, char **argv)
     recvfrom(sockfd, serverResponse, 255, 0,
              (struct sockaddr *)&serveraddr, &len);
     printf("Server Response: %s\n", serverResponse);
-    fputs(serverResponse, file);
-    recvfrom(sockfd, senderReceipt, 6, 0,
+    recvfrom(sockfd, senderReceipt, 24, 0,
              (struct sockaddr *)&serveraddr, &len);
     printf("Received packet\n");
+    fputs(serverResponse, file);
     // Now we have the sender receipt array
     // If the sender receipt matches the order we were expecting
-    if (windowCounter == senderReceipt[5] && senderReceipt[windowCounter] == 1)
-    {
-      printf("Window Counter: %d\n", windowCounter);
-      printf("Sender Receipt: %d\n", senderReceipt[5]);
-      printf("Sender receipt at counter: %d\n", senderReceipt[windowCounter]);
-      receivingWindow[windowCounter] = 1;
-      acknowledgements[windowCounter] = 1;
-      // This array is of length 6.  0-4 for the acknowledgements and the 5th
-      // spot for the index that was just acknowledged.
-      acknowledgements[5] = windowCounter;
-      sendto(sockfd, acknowledgements, 6, 0,
-             (struct sockaddr *)&serveraddr, sizeof(serveraddr));
-      acknowledgementsSent++;
-      windowCounter++;
-    }
+    // if (windowCounter == senderReceipt[5] && senderReceipt[windowCounter] == 1)
+    // {
+    printf("Window Counter: %d\n", windowCounter);
+    printf("Sender Receipt for index 5: %d\n", senderReceipt[5]);
+    printf("Sender receipt at counter: %d\n", senderReceipt[windowCounter]);
+    receivingWindow[windowCounter] = 1;
+    acknowledgements[windowCounter] = 1;
+    // This array is of length 6.  0-4 for the acknowledgements and the 5th
+    // spot for the index that was just acknowledged.
+    acknowledgements[5] = windowCounter;
+    sendto(sockfd, acknowledgements, 24, 0,
+           (struct sockaddr *)&serveraddr, sizeof(serveraddr));
+    acknowledgementsSent++;
+    windowCounter++;
+    // }
     // what happens when the sender sends a packet in a different order
-    else
-    {
-      printf("Window Counter: %d\n", windowCounter);
-      printf("Sender Receipt: %d\n", senderReceipt[5]);
-      printf("Sender receipt at counter: %d\n", senderReceipt[windowCounter]);
+    // else
+    // {
+    //   printf("Window Counter: %d\n", windowCounter);
+    //   printf("Sender Receipt: %d\n", senderReceipt[5]);
+    //   printf("Sender receipt at counter: %d\n", senderReceipt[windowCounter]);
 
-      windowCounter = senderReceipt[5];
-      receivingWindow[windowCounter] = 1;
-      acknowledgements[windowCounter] = 1;
-      acknowledgements[5] = windowCounter;
-      sendto(sockfd, acknowledgements, 6, 0,
-             (struct sockaddr *)&serveraddr, sizeof(serveraddr));
-      acknowledgementsSent++;
-      windowCounter++;
-    }
+    //   windowCounter = senderReceipt[5];
+    //   receivingWindow[windowCounter] = 1;
+    //   acknowledgements[windowCounter] = 1;
+    //   acknowledgements[5] = windowCounter;
+    //   sendto(sockfd, acknowledgements, sizeof(acknowledgements), 0,
+    //          (struct sockaddr *)&serveraddr, sizeof(serveraddr));
+    //   acknowledgementsSent++;
+    //   windowCounter++;
+    // }
     // windowCounter++;
-
   } while (windowCounter < 5);
 
   fclose(file);
