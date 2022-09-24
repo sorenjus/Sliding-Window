@@ -52,18 +52,12 @@ int main(int argc, char **argv)
     {
         // Array to  track if the desired window is available
         fgets(&windowValue[windowCounter], 255, file);
-        printf("%s\n", &windowValue[windowCounter]);
+        // printf("%s\n", &windowValue[windowCounter]);
         do
         {
-            if (windowCounter == 5 && totalCountSent == 5)
-            {
-                windowCounter = 0;
-                totalCountSent = 0;
-                memset(senderReceipt, 0, 6 * sizeof(int));
-                memset(senderWindow, 0, 5 * sizeof(int));
-            }
             if (senderWindow[windowCounter] == 0)
             {
+
                 // if (totalCountSent < 5)
                 // {
                 // printf("%s\n", &windowValue[windowCounter]);
@@ -76,6 +70,12 @@ int main(int argc, char **argv)
                 sendto(sockfd, senderReceipt, 24, 0,
                        (struct sockaddr *)&clientaddr, sizeof(clientaddr));
                 windowCounter++;
+                if (windowCounter == 5)
+                {
+                    windowCounter = 0;
+                    memset(senderReceipt, 0, 6 * sizeof(int));
+                    memset(senderWindow, 0, 5 * sizeof(int));
+                }
                 totalCountSent++;
                 // fgets(&windowValue[windowCounter], 255, file);
             }
@@ -90,16 +90,19 @@ int main(int argc, char **argv)
                 senderReceipt[5] = windowCounter;
                 sendto(sockfd, senderReceipt, 24, 0,
                        (struct sockaddr *)&clientaddr, sizeof(clientaddr));
-                totalCountSent++;
-                windowCounter++;
             }
             recvfrom(sockfd, clientAcknowledgements, 24, 0,
                      (struct sockaddr *)&clientaddr, &len);
+            int index = clientAcknowledgements[5];
+            senderWindow[index] = 0;
 
         } while (fgets(&windowValue[windowCounter], 255, file));
         printf("Got here\n");
-        char str[] = "EOF";
-        sendto(sockfd, &str, sizeof(str), 0,
+        // Definitely suspicious
+        char *str = "EOF";
+        sendto(sockfd, str, sizeof(str), 0,
+               (struct sockaddr *)&clientaddr, sizeof(clientaddr));
+        sendto(sockfd, senderReceipt, 24, 0,
                (struct sockaddr *)&clientaddr, sizeof(clientaddr));
         fclose(file);
         // }

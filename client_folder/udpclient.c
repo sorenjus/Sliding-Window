@@ -62,6 +62,9 @@ int main(int argc, char **argv)
 
   do
   {
+    // To do: Check for missing packets before fputs.
+    // To do: fflush
+    // To do: figure out how to stop
     if (acknowledgementsSent == 5 && windowCounter == 5)
     {
       windowCounter = 0;
@@ -73,9 +76,9 @@ int main(int argc, char **argv)
              (struct sockaddr *)&serveraddr, &len);
     recvfrom(sockfd, senderReceipt, 24, 0,
              (struct sockaddr *)&serveraddr, &len);
-    fputs(serverResponse, file);
     printf("Received packet\n");
     printf("Server Response: %s\n", serverResponse);
+    // Probably wrong
     if (!strcmp(serverResponse, "EOF"))
     {
       printf("Running now false\n");
@@ -83,6 +86,7 @@ int main(int argc, char **argv)
     }
     else
     {
+      fputs(serverResponse, file);
 
       // Now we have the sender receipt array
       // If the sender receipt matches the order we were expecting
