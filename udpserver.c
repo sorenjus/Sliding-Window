@@ -53,9 +53,10 @@ int main(int argc, char **argv)
         // Array to  track if the desired window is available
         fgets(&windowValue[windowCounter], 255, file);
         // printf("%s\n", &windowValue[windowCounter]);
+
         do
         {
-            if (senderWindow[windowCounter] == 0)
+            if (&senderWindow[windowCounter] == 0)
             {
 
                 // if (totalCountSent < 5)
@@ -65,16 +66,16 @@ int main(int argc, char **argv)
                        (struct sockaddr *)&clientaddr, sizeof(clientaddr));
                 printf("%s\n", &windowValue[windowCounter]);
                 senderWindow[windowCounter] = 1;
-                senderReceipt[windowCounter] = 1;
-                senderReceipt[5] = windowCounter;
-                sendto(sockfd, senderReceipt, 24, 0,
-                       (struct sockaddr *)&clientaddr, sizeof(clientaddr));
+                //senderReceipt[windowCounter] = 1;
+                //senderReceipt[5] = windowCounter;
+                //sendto(sockfd, senderReceipt, 24, 0,
+                  //     (struct sockaddr *)&clientaddr, sizeof(clientaddr));
                 windowCounter++;
                 if (windowCounter == 5)
                 {
                     windowCounter = 0;
-                    memset(senderReceipt, 0, 6 * sizeof(int));
-                    memset(senderWindow, 0, 5 * sizeof(int));
+                    //memset(senderReceipt, 0, 6 * sizeof(int));
+                    //memset(senderWindow, 0, 5 * sizeof(int));
                 }
                 totalCountSent++;
                 // fgets(&windowValue[windowCounter], 255, file);
@@ -86,24 +87,29 @@ int main(int argc, char **argv)
                        (struct sockaddr *)&clientaddr, sizeof(clientaddr));
                 printf("Sent packet at window %d\n", windowCounter);
                 senderWindow[windowCounter] = 1;
-                senderReceipt[windowCounter] = 1;
-                senderReceipt[5] = windowCounter;
-                sendto(sockfd, senderReceipt, 24, 0,
-                       (struct sockaddr *)&clientaddr, sizeof(clientaddr));
+                //senderReceipt[windowCounter] = 1;
+                //senderReceipt[5] = windowCounter;
+                //sendto(sockfd, senderReceipt, 24, 0,
+                  //     (struct sockaddr *)&clientaddr, sizeof(clientaddr));
             }
+            /* 
+            ************It doesn't like the acknowledgement*************
+
             recvfrom(sockfd, clientAcknowledgements, 24, 0,
-                     (struct sockaddr *)&clientaddr, &len);
+                     (struct sockaddr *)&clientaddr, &len))
             int index = clientAcknowledgements[5];
             senderWindow[index] = 0;
+            */
 
-        } while (fgets(&windowValue[windowCounter], 255, file));
+        }while(fgets(&windowValue[windowCounter], 255, file));
+
         printf("Got here\n");
         // Definitely suspicious
         char *str = "EOF";
         sendto(sockfd, str, sizeof(str), 0,
                (struct sockaddr *)&clientaddr, sizeof(clientaddr));
-        sendto(sockfd, senderReceipt, 24, 0,
-               (struct sockaddr *)&clientaddr, sizeof(clientaddr));
+        //sendto(sockfd, senderReceipt, 24, 0,
+          //     (struct sockaddr *)&clientaddr, sizeof(clientaddr));
         fclose(file);
         // }
         // close(sockfd);
