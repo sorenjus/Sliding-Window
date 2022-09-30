@@ -20,13 +20,17 @@ int main(int argc, char **argv)
   }
 
   int portNum = 9876;
+
   int windowCounter = 0, acknowledgementsSent = 0;
+  //if they can receive more packets
   int receivingWindow[5] = {0, 0, 0, 0, 0};
   int acknowledgements[6] = {0, 0, 0, 0, 0, 0};
-  int senderReceipt[6];
+  //int senderReceipt[6];
   int totalCountReceived = 0;
+  int nextPacket = 0;
   // Holds server response
-  char serverResponse[255];
+  char serverResponse[5][255];
+
   // Holds the file name for writing
   char *filename;
   // FILE file to write contents to
@@ -70,34 +74,42 @@ int main(int argc, char **argv)
       memset(receivingWindow, 0, 5 * sizeof(int));
     }
     */
-
    //receive the packet from the server
+   printf("bus error3?");
     recvfrom(sockfd, line, 255, 0,
              (struct sockaddr *)&serveraddr, &len);
     memcpy(&windowCounter, &line[0], 4);
     memcpy(&totalCountReceived, &line[4], 4);
-    strcpy(serverResponse, &line[8]);
+    strcpy(serverResponse[windowCounter], &line[8]);
     //print the packet contents
     printf("Received packet\n");
-    printf("Server Response: %s\n", serverResponse);
+    printf("Server Response: %s\n", serverResponse[windowCounter]);
     printf("Received at window : %d\n", windowCounter);
     printf("Sequence count : %d\n", totalCountReceived);
 
     //Check if the file steam has ended
-    if (!strcmp(serverResponse, "EOF"))
+    if (!strcmp(serverResponse[windowCounter], "EOF"))
     {
       printf("Running now false\n");
       running = false;
     }
     else
     {
+      //if the packet is the next packet in the sequence, add it to the file and send acknowledgement 
+      if(totalCountReceived == nextPacket){
       printf("Adding packet contents to file\n\n");
       //add the response to the file
-      fputs(serverResponse, file);
-      if(windowCounter == 4){
-        break;
-      }
+      fputs(serverResponse[windowCounter], file);
+      nextPacket++;
 
+      char ackLine[8];
+      memcpy(&ackLine[0], &windowCounter, 4);
+      memcpy(&ackLine[4], &totalCountReceived, 4);
+      sendto(sockfd, &ackLine, 8, 0,
+         (struct sockaddr *)&serveraddr, sizeof(serveraddr));
+      printf("Sent acknowledgement\nWindow : %d\nCurrent sequence : %d\n\n", windowCounter, totalCountReceived);
+      printf("bus error1?");
+      }
       // Now we have the sender receipt array
       // If the sender receipt matches the order we were expecting
       /******************************Not totally sure how this works*********************
@@ -124,15 +136,16 @@ int main(int argc, char **argv)
         //printf("Sender receipt at counter: %d\n", senderReceipt[windowCounter]);
 
         //windowCounter = senderReceipt[5];
-        receivingWindow[windowCounter] = 1;
+        /*receivingWindow[windowCounter] = 1;
         acknowledgements[windowCounter] = 1;
         acknowledgements[5] = windowCounter;
         sendto(sockfd, acknowledgements, 24, 0,
                (struct sockaddr *)&serveraddr, sizeof(serveraddr));
         acknowledgementsSent++;
         windowCounter++;
-    
+    */
       // windowCounter++;
+      printf("bus error2?");
     }
   } while (running);
 

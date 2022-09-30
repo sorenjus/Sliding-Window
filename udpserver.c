@@ -25,6 +25,9 @@ int main(int argc, char **argv)
     int senderWindow[5] = {0, 0, 0, 0, 0};
     int senderReceipt[6] = {0, 0, 0, 0, 0, 0};
     int clientAcknowledgements[6];
+    int currentWindowCounter = 0;
+            int currentCount = 0;
+            char ackLine[8];
     char windowValue[5][255];
     // Tracks the current window in the queue
     int windowCounter = 0;
@@ -91,7 +94,6 @@ int main(int argc, char **argv)
                 sendto(sockfd, &windowValue[windowCounter][0], 255, 0,
                        (struct sockaddr *)&clientaddr, sizeof(clientaddr));
                 printf("Sent packet at window %d\n", windowCounter);
-                senderWindow[windowCounter] = 1;
                 //senderReceipt[windowCounter] = 1;
                 //senderReceipt[5] = windowCounter;
                 //sendto(sockfd, senderReceipt, 24, 0,
@@ -99,11 +101,17 @@ int main(int argc, char **argv)
 
                   //testing
                   totalCountSent++;
-                  printf("times resent %d", totalCountSent);
+                  printf("times resent %d\n", totalCountSent);
                   if(totalCountSent == 10){
                     break;
                   }
             }
+            printf("receiving");
+            recvfrom(sockfd, ackLine, 5000, 0,
+                (struct sockaddr *)&clientaddr, &len);
+            memcpy(&ackLine[0], &currentWindowCounter, 4);
+            memcpy(&ackLine[4], &currentCount, 4);
+            senderWindow[currentWindowCounter] = 0;
 
         }while(!feof(file));
 
@@ -112,8 +120,6 @@ int main(int argc, char **argv)
         char *str = "EOF";
         sendto(sockfd, str, sizeof(str), 0,
                (struct sockaddr *)&clientaddr, sizeof(clientaddr));
-        //sendto(sockfd, senderReceipt, 24, 0,
-          //     (struct sockaddr *)&clientaddr, sizeof(clientaddr));
         fclose(file);
         // }
         // close(sockfd);
