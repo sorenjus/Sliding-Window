@@ -32,10 +32,10 @@ int main(int argc, char **argv)
     int totalCountSent = 0;
     // fileName set to the udpclient entry
     socklen_t len = sizeof(clientaddr);
-    char line[5000] = "";
-    recvfrom(sockfd, line, 5000, 0,
+    char fileRequested[5000] = "";
+    recvfrom(sockfd, fileRequested, 5000, 0,
              (struct sockaddr *)&clientaddr, &len); // client info added to clientaddr
-    char *fileName = line;
+    char *fileName = fileRequested;
     FILE *file;
     file = fopen(fileName, "r+");
     if (file == NULL)
@@ -46,9 +46,9 @@ int main(int argc, char **argv)
     // while (1)
     // { // constantly receiving
 
-    printf("Received from client: %s\n", line);
+    printf("Received from client: %s\n", fileRequested);
     // Wait for the client to make a request
-    if (strcmp(line, "") != 0)
+    if (strcmp(fileRequested, "") != 0)
     {
         // Array to  track if the desired window is available
         fgets(&windowValue[windowCounter], 255, file);
@@ -56,15 +56,21 @@ int main(int argc, char **argv)
 
         do
         {
-            if (&senderWindow[windowCounter] == 0)
+            if (senderWindow[windowCounter] == 0)
             {
-
+                char line[500] = "";
+                memcpy(&line[0], &windowCounter, 4);
+                memcpy(&line[4], &totalCountSent, 4);
+                strcpy(&line[8], &windowValue[windowCounter]);
                 // if (totalCountSent < 5)
                 // {
                 // printf("%s\n", &windowValue[windowCounter]);
-                sendto(sockfd, &windowValue[windowCounter], 255, 0,
+                sendto(sockfd, line, 255, 0,
                        (struct sockaddr *)&clientaddr, sizeof(clientaddr));
-                printf("%s\n", &windowValue[windowCounter]);
+                //printf("%*s\n", &line);
+                printf("Sent packet at window %d\n", windowCounter);
+                printf("Sequence number : %d\n", totalCountSent);
+                printf("packet contents : %s\n", &line);
                 senderWindow[windowCounter] = 1;
                 //senderReceipt[windowCounter] = 1;
                 //senderReceipt[5] = windowCounter;
@@ -92,14 +98,6 @@ int main(int argc, char **argv)
                 //sendto(sockfd, senderReceipt, 24, 0,
                   //     (struct sockaddr *)&clientaddr, sizeof(clientaddr));
             }
-            /* 
-            ************It doesn't like the acknowledgement*************
-
-            recvfrom(sockfd, clientAcknowledgements, 24, 0,
-                     (struct sockaddr *)&clientaddr, &len))
-            int index = clientAcknowledgements[5];
-            senderWindow[index] = 0;
-            */
 
         }while(fgets(&windowValue[windowCounter], 255, file));
 

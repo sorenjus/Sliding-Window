@@ -19,23 +19,18 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  char addrIP[20] = "";
   int portNum = 9876;
   int windowCounter = 0, acknowledgementsSent = 0;
   int receivingWindow[5] = {0, 0, 0, 0, 0};
   int acknowledgements[6] = {0, 0, 0, 0, 0, 0};
   int senderReceipt[6];
+  int totalCountReceived = 0;
   // Holds server response
   char serverResponse[255];
   // Holds the file name for writing
   char *filename;
   // FILE file to write contents to
   FILE *file;
-  // Setting up IP, Socket information, and port number
-  // printf("Enter an IP Address : \n");
-  // fgets(addrIP,5000,stdin);
-  // printf("Enter a port number :");
-  // scanf("%d%*c", &portNum);
   struct sockaddr_in serveraddr, clientaddr;
   socklen_t len = sizeof(clientaddr);
   serveraddr.sin_family = AF_INET;
@@ -62,9 +57,11 @@ int main(int argc, char **argv)
 
   do
   {
+    char line[264] = "";
     // To do: Check for missing packets before fputs.
     // To do: fflush
     // To do: figure out how to stop
+    /*******************************Not totally sure how this works*********************
     if (acknowledgementsSent == 5 && windowCounter == 5)
     {
       windowCounter = 0;
@@ -72,13 +69,21 @@ int main(int argc, char **argv)
       memset(acknowledgements, 0, 6 * sizeof(int));
       memset(receivingWindow, 0, 5 * sizeof(int));
     }
-    recvfrom(sockfd, serverResponse, 255, 0,
+    */
+
+   //receive the packet from the server
+    recvfrom(sockfd, line, 255, 0,
              (struct sockaddr *)&serveraddr, &len);
-    recvfrom(sockfd, senderReceipt, 24, 0,
-             (struct sockaddr *)&serveraddr, &len);
+    memcpy(&windowCounter, &line[0], 4);
+    memcpy(&totalCountReceived, &line[4], 4);
+    strcpy(serverResponse, &line[8]);
+    //print the packet contents
     printf("Received packet\n");
     printf("Server Response: %s\n", serverResponse);
-    // Probably wrong
+    printf("Received at window : %d\n", windowCounter);
+    printf("Sequence count : %d\n", totalCountReceived);
+
+    //Check if the file steam has ended
     if (!strcmp(serverResponse, "EOF"))
     {
       printf("Running now false\n");
@@ -86,10 +91,16 @@ int main(int argc, char **argv)
     }
     else
     {
+      printf("Adding packet contents to file\n\n");
+      //add the response to the file
       fputs(serverResponse, file);
+      if(windowCounter == 4){
+        break;
+      }
 
       // Now we have the sender receipt array
       // If the sender receipt matches the order we were expecting
+      /******************************Not totally sure how this works*********************
       if (windowCounter == senderReceipt[5] && senderReceipt[windowCounter] == 1)
       {
         printf("Window Counter: %d\n", windowCounter);
@@ -105,13 +116,14 @@ int main(int argc, char **argv)
         acknowledgementsSent++;
         windowCounter++;
       }
-      else
-      {
-        printf("Window Counter: %d\n", windowCounter);
-        printf("Sender Receipt: %d\n", senderReceipt[5]);
-        printf("Sender receipt at counter: %d\n", senderReceipt[windowCounter]);
+      */
 
-        windowCounter = senderReceipt[5];
+        //currently sender receipt does not exist
+        //printf("Window Counter: %d\n", windowCounter);
+        //printf("Sender Receipt: %d\n", senderReceipt[5]);
+        //printf("Sender receipt at counter: %d\n", senderReceipt[windowCounter]);
+
+        //windowCounter = senderReceipt[5];
         receivingWindow[windowCounter] = 1;
         acknowledgements[windowCounter] = 1;
         acknowledgements[5] = windowCounter;
@@ -119,7 +131,7 @@ int main(int argc, char **argv)
                (struct sockaddr *)&serveraddr, sizeof(serveraddr));
         acknowledgementsSent++;
         windowCounter++;
-      }
+    
       // windowCounter++;
     }
   } while (running);
