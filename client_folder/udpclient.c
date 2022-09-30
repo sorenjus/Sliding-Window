@@ -26,7 +26,7 @@ int main(int argc, char **argv)
   int receivingWindow[5] = {0, 0, 0, 0, 0};
   int acknowledgements[6] = {0, 0, 0, 0, 0, 0};
   //int senderReceipt[6];
-  int totalCountReceived = 0;
+  int fileSequence = 0;
   int nextPacket = 0;
   // Holds server response
   char serverResponse[5][255];
@@ -75,17 +75,19 @@ int main(int argc, char **argv)
     }
     */
    //receive the packet from the server
-   printf("bus error3?");
     recvfrom(sockfd, line, 255, 0,
              (struct sockaddr *)&serveraddr, &len);
+    if(strstr(line, "EOF")){
+      break;
+    }
     memcpy(&windowCounter, &line[0], 4);
-    memcpy(&totalCountReceived, &line[4], 4);
+    memcpy(&fileSequence, &line[4], 4);
     strcpy(serverResponse[windowCounter], &line[8]);
     //print the packet contents
     printf("Received packet\n");
     printf("Server Response: %s\n", serverResponse[windowCounter]);
     printf("Received at window : %d\n", windowCounter);
-    printf("Sequence count : %d\n", totalCountReceived);
+    printf("Sequence count : %d\n", fileSequence);
 
     //Check if the file steam has ended
     if (!strcmp(serverResponse[windowCounter], "EOF"))
@@ -96,19 +98,18 @@ int main(int argc, char **argv)
     else
     {
       //if the packet is the next packet in the sequence, add it to the file and send acknowledgement 
-      if(totalCountReceived == nextPacket){
+      if(fileSequence == nextPacket){
       printf("Adding packet contents to file\n\n");
       //add the response to the file
       fputs(serverResponse[windowCounter], file);
       nextPacket++;
 
-      char ackLine[8];
+      char ackLine[9] = "";
       memcpy(&ackLine[0], &windowCounter, 4);
-      memcpy(&ackLine[4], &totalCountReceived, 4);
-      sendto(sockfd, &ackLine, 8, 0,
-         (struct sockaddr *)&serveraddr, sizeof(serveraddr));
-      printf("Sent acknowledgement\nWindow : %d\nCurrent sequence : %d\n\n", windowCounter, totalCountReceived);
-      printf("bus error1?");
+      memcpy(&ackLine[4], &fileSequence, 4);
+      sendto(sockfd, ackLine, 8, 0,
+            (struct sockaddr *)&serveraddr, sizeof(serveraddr));
+      printf("Sent acknowledgement\nWindow : %d\nCurrent sequence : %d\n\n", windowCounter, fileSequence);
       }
       // Now we have the sender receipt array
       // If the sender receipt matches the order we were expecting
@@ -145,7 +146,6 @@ int main(int argc, char **argv)
         windowCounter++;
     */
       // windowCounter++;
-      printf("bus error2?");
     }
   } while (running);
 

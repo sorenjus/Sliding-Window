@@ -26,13 +26,13 @@ int main(int argc, char **argv)
     int senderReceipt[6] = {0, 0, 0, 0, 0, 0};
     int clientAcknowledgements[6];
     int currentWindowCounter = 0;
-            int currentCount = 0;
-            char ackLine[8];
+    int currentCount = 0;
+    char ackLine[8];
     char windowValue[5][255];
     // Tracks the current window in the queue
     int windowCounter = 0;
     // Track the current sequence count
-    int totalCountSent = 0;
+    int fileSequence = 0;
     // fileName set to the udpclient entry
     socklen_t len = sizeof(clientaddr);
     char fileRequested[5000] = "";
@@ -61,19 +61,19 @@ int main(int argc, char **argv)
             if (senderWindow[windowCounter] == 0)
             {
                 fgets(&windowValue[windowCounter][0], 255, file);
-                char line[500] = "";
+                char line[263] = "";
                 memcpy(&line[0], &windowCounter, 4);
-                memcpy(&line[4], &totalCountSent, 4);
+                memcpy(&line[4], &fileSequence, 4);
                 strcpy(&line[8], &windowValue[windowCounter][0]);
                 // if (totalCountSent < 5)
                 // {
                 // printf("%s\n", &windowValue[windowCounter]);
-                sendto(sockfd, line, 255, 0,
+                sendto(sockfd, line, 263, 0,
                        (struct sockaddr *)&clientaddr, sizeof(clientaddr));
                 //printf("%*s\n", &line);
                 printf("Sent packet at window %d\n", windowCounter);
-                printf("Sequence number : %d\n", totalCountSent);
-                printf("packet contents : %c\n", windowValue[windowCounter][0]);
+                printf("Sequence number : %d\n", fileSequence);
+                printf("packet contents : %s\n", windowValue[windowCounter]);
                 senderWindow[windowCounter] = 1;
                 //senderReceipt[windowCounter] = 1;
                 //senderReceipt[5] = windowCounter;
@@ -86,10 +86,10 @@ int main(int argc, char **argv)
                     //memset(senderReceipt, 0, 6 * sizeof(int));
                     //memset(senderWindow, 0, 5 * sizeof(int));
                 }
-                totalCountSent++;
+                fileSequence++;
             }
             else
-            {
+            {/*
                 printf("%s\n", &windowValue[windowCounter][0]);
                 sendto(sockfd, &windowValue[windowCounter][0], 255, 0,
                        (struct sockaddr *)&clientaddr, sizeof(clientaddr));
@@ -98,27 +98,21 @@ int main(int argc, char **argv)
                 //senderReceipt[5] = windowCounter;
                 //sendto(sockfd, senderReceipt, 24, 0,
                   //     (struct sockaddr *)&clientaddr, sizeof(clientaddr));
-
-                  //testing
-                  totalCountSent++;
-                  printf("times resent %d\n", totalCountSent);
-                  if(totalCountSent == 10){
-                    break;
-                  }
-            }
-            printf("receiving");
-            recvfrom(sockfd, ackLine, 5000, 0,
-                (struct sockaddr *)&clientaddr, &len);
-            memcpy(&ackLine[0], &currentWindowCounter, 4);
-            memcpy(&ackLine[4], &currentCount, 4);
+            */
+           }
+            printf("receiving\n");
+            if(recvfrom(sockfd, ackLine, 9, 0,
+                (struct sockaddr *)&clientaddr, &len)){
+            memcpy(&currentWindowCounter, &ackLine[0], 4);
+            memcpy(&currentCount, &ackLine[4], 4);
             senderWindow[currentWindowCounter] = 0;
-
+            printf("sender window boolean : %d\nReturn window value : %d\nReturned sequence number : %d\n\n", senderWindow[currentWindowCounter], currentWindowCounter,currentCount);}
         }while(!feof(file));
 
         printf("Got here\n");
         // Definitely suspicious
         char *str = "EOF";
-        sendto(sockfd, str, sizeof(str), 0,
+        sendto(sockfd, str, 263, 0,
                (struct sockaddr *)&clientaddr, sizeof(clientaddr));
         fclose(file);
         // }
