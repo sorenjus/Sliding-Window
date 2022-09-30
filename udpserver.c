@@ -25,7 +25,7 @@ int main(int argc, char **argv)
     int senderWindow[5] = {0, 0, 0, 0, 0};
     int senderReceipt[6] = {0, 0, 0, 0, 0, 0};
     int clientAcknowledgements[6];
-    char windowValue[255];
+    char windowValue[5][255];
     // Tracks the current window in the queue
     int windowCounter = 0;
     // Track the current sequence count
@@ -51,17 +51,17 @@ int main(int argc, char **argv)
     if (strcmp(fileRequested, "") != 0)
     {
         // Array to  track if the desired window is available
-        fgets(&windowValue[windowCounter], 255, file);
         // printf("%s\n", &windowValue[windowCounter]);
 
         do
         {
             if (senderWindow[windowCounter] == 0)
             {
+                fgets(&windowValue[windowCounter][0], 255, file);
                 char line[500] = "";
                 memcpy(&line[0], &windowCounter, 4);
                 memcpy(&line[4], &totalCountSent, 4);
-                strcpy(&line[8], &windowValue[windowCounter]);
+                strcpy(&line[8], &windowValue[windowCounter][0]);
                 // if (totalCountSent < 5)
                 // {
                 // printf("%s\n", &windowValue[windowCounter]);
@@ -70,7 +70,7 @@ int main(int argc, char **argv)
                 //printf("%*s\n", &line);
                 printf("Sent packet at window %d\n", windowCounter);
                 printf("Sequence number : %d\n", totalCountSent);
-                printf("packet contents : %s\n", &line);
+                printf("packet contents : %c\n", windowValue[windowCounter][0]);
                 senderWindow[windowCounter] = 1;
                 //senderReceipt[windowCounter] = 1;
                 //senderReceipt[5] = windowCounter;
@@ -84,12 +84,11 @@ int main(int argc, char **argv)
                     //memset(senderWindow, 0, 5 * sizeof(int));
                 }
                 totalCountSent++;
-                // fgets(&windowValue[windowCounter], 255, file);
             }
             else
             {
-                printf("%s\n", &windowValue[windowCounter]);
-                sendto(sockfd, &windowValue[windowCounter], 255, 0,
+                printf("%s\n", &windowValue[windowCounter][0]);
+                sendto(sockfd, &windowValue[windowCounter][0], 255, 0,
                        (struct sockaddr *)&clientaddr, sizeof(clientaddr));
                 printf("Sent packet at window %d\n", windowCounter);
                 senderWindow[windowCounter] = 1;
@@ -97,9 +96,16 @@ int main(int argc, char **argv)
                 //senderReceipt[5] = windowCounter;
                 //sendto(sockfd, senderReceipt, 24, 0,
                   //     (struct sockaddr *)&clientaddr, sizeof(clientaddr));
+
+                  //testing
+                  totalCountSent++;
+                  printf("times resent %d", totalCountSent);
+                  if(totalCountSent == 10){
+                    break;
+                  }
             }
 
-        }while(fgets(&windowValue[windowCounter], 255, file));
+        }while(!feof(file));
 
         printf("Got here\n");
         // Definitely suspicious
