@@ -74,7 +74,7 @@ int main(int argc, char **argv)
                 printf("Sent packet at window %d\n", windowCounter);
                 printf("Sequence number : %d\n", fileSequence);
                 printf("packet contents : %s\n", windowValue[windowCounter]);
-                senderWindow[windowCounter] = 1;
+                senderWindow[windowCounter] = fileSequence;
                 //senderReceipt[windowCounter] = 1;
                 //senderReceipt[5] = windowCounter;
                 //sendto(sockfd, senderReceipt, 24, 0,
@@ -89,16 +89,13 @@ int main(int argc, char **argv)
                 fileSequence++;
             }
             else
-            {/*
-                printf("%s\n", &windowValue[windowCounter][0]);
-                sendto(sockfd, &windowValue[windowCounter][0], 255, 0,
+            {
+                char line[263] = "";
+                memcpy(&line[0], &windowCounter, 4);
+                memcpy(&line[4], &senderWindow[windowCounter], 4);
+                strcpy(&line[8], &windowValue[windowCounter][0]);
+                sendto(sockfd, line, 263, 0,
                        (struct sockaddr *)&clientaddr, sizeof(clientaddr));
-                printf("Sent packet at window %d\n", windowCounter);
-                //senderReceipt[windowCounter] = 1;
-                //senderReceipt[5] = windowCounter;
-                //sendto(sockfd, senderReceipt, 24, 0,
-                  //     (struct sockaddr *)&clientaddr, sizeof(clientaddr));
-            */
            }
             printf("receiving\n");
             if(recvfrom(sockfd, ackLine, 9, 0,
