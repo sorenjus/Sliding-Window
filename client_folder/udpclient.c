@@ -67,6 +67,9 @@ int main(int argc, char **argv)
              (struct sockaddr *)&serveraddr, &len);
     if (strstr(line, "EOF"))
     {
+      char *str = "EOF";
+        sendto(sockfd, str, 263, 0,
+               (struct sockaddr *)&serveraddr, sizeof(clientaddr));
       break;
     }
 
