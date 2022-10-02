@@ -171,7 +171,10 @@ int main(int argc, char **argv)
                         {
                             memcpy(&receivedWindowCounter, &ackLine[0], 4);
                             memcpy(&receivedSeqCount, &ackLine[4], 4);
+                            if (senderWindow[receivedWindowCounter] == receivedSeqCount)
+                        {
                             senderWindow[receivedWindowCounter] = 0;
+                        }
                              char *thing;
                              thing = "";
                              strcpy(&windowValue[receivedWindowCounter][0], thing);

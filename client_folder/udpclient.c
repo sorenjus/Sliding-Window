@@ -98,7 +98,7 @@ int main(int argc, char **argv)
             sendto(sockfd, ackLine, 8, 0,
                    (struct sockaddr *)&serveraddr, sizeof(serveraddr));
 
-            printf("Sent acknowledgement\nWindow : %d\nCurrent sequence : %d\n\n", windowCounter, receivingWindow[windowCounter]);
+            printf("Sent acknowledgement\nWindow : %d\nCurrent sequence : %d\n\n", i, receivingWindow[i]);
           }
         }
       }
@@ -156,16 +156,15 @@ int main(int argc, char **argv)
         {
           for (int i = 0; i < 5; ++i)
           {
-            if (receivingWindow[i] == nextPacket)
-            {
+            if (receivingWindow[i] == nextPacket){
               fputs(windowValue[i], file);
               nextPacket++;
+            }
               char ackLine[9] = "";
               memcpy(&ackLine[0], &i, 4);
               memcpy(&ackLine[4], &receivingWindow[i], 4);
               sendto(sockfd, ackLine, 8, 0,
                      (struct sockaddr *)&serveraddr, sizeof(serveraddr));
-            }
           }
         }
       }
