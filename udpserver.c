@@ -62,7 +62,10 @@ int main(int argc, char **argv)
         char *fileName = fileRequested;
         FILE *file;
         // Read the requested file
-        file = fopen(fileName, "r+");
+        unsigned char buffer[10];
+
+        //file = fopen(fileName, "r+");
+        file = fopen(fileName,"rb");  // r for read, b for binary
         // if the file is Null return the error message
         if (file == NULL)
         {
@@ -81,7 +84,8 @@ int main(int argc, char **argv)
             {
                 if (senderWindow[windowCounter] == -1)
                 {
-                    fgets(&windowValue[windowCounter][0], 255, file);
+                    fread(&windowValue[windowCounter][0],sizeof(windowValue[windowCounter][0]),1,file); // read
+                    //fgets(&windowValue[windowCounter][0], 255, file);
                     senderWindow[windowCounter] = fileSequence;
                     fileSequence++;
                     char line[263] = "";

@@ -56,7 +56,13 @@ int main(int argc, char **argv)
   filename = userInput;
   int tempSequence = 0;
 
-  if ((file = fopen(filename, "w")) == NULL)
+  /*if ((file = fopen(filename, "w")) == NULL)
+  {
+    fprintf(stderr, "Cannot write to output file");
+    return 1;
+  }
+  */
+  if ((file = fopen(filename,"wb")) == NULL)
   {
     fprintf(stderr, "Cannot write to output file");
     return 1;
@@ -141,7 +147,8 @@ int main(int argc, char **argv)
         {
           printf("Adding packet contents to file\n\n");
           // add the response to the file
-          fputs(windowValue[windowCounter], file);
+          //fputs(windowValue[windowCounter], file);
+          fwrite(windowValue[windowCounter],sizeof(windowValue[windowCounter][0]),1,file); // write 10 bytes from our buffer
           nextPacket++;
 
           char ackLine[9] = "";
@@ -157,7 +164,8 @@ int main(int argc, char **argv)
           for (int i = 0; i < 5; ++i)
           {
             if (receivingWindow[i] == nextPacket){
-              fputs(windowValue[i], file);
+              //fputs(windowValue[i], file);
+              fwrite(windowValue[windowCounter],sizeof(255),1,file); // write 10 bytes from our buffer
               nextPacket++;
             }
               char ackLine[9] = "";
@@ -176,7 +184,8 @@ int main(int argc, char **argv)
           {
             if (receivingWindow[i] == nextPacket)
             {
-              fputs(windowValue[i], file);
+              //fputs(windowValue[i], file);
+              fwrite(windowValue[windowCounter],sizeof(windowValue[windowCounter][0]),1,file); // write 10 bytes from our buffer
               nextPacket++;
               char ackLine[9] = "";
               memcpy(&ackLine[0], &i, 4);
