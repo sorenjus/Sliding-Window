@@ -32,7 +32,7 @@ int main(int argc, char **argv)
     setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
 
     // array holds the current fileSequence for each window (default 0)
-    int senderWindow[5] = {0, 0, 0, 0, 0};
+    int senderWindow[5] = {-1, -1, -1, -1, -1};
 
     // when an acknowledgement is received, store the acknowledgements windowCounter and file sequence
     int receivedWindowCounter = 0;
@@ -72,7 +72,7 @@ int main(int argc, char **argv)
         {
             do
             {
-                if (senderWindow[windowCounter] == 0)
+                if (senderWindow[windowCounter] == -1)
                 {
                     fgets(&windowValue[windowCounter][0], 255, file);
                     senderWindow[windowCounter] = fileSequence;
@@ -134,7 +134,7 @@ int main(int argc, char **argv)
                          */
                         if (senderWindow[receivedWindowCounter] == receivedSeqCount)
                         {
-                            senderWindow[receivedWindowCounter] = 0;
+                            senderWindow[receivedWindowCounter] = -1;
                         }
                         char *thing;
                         thing = "";
@@ -173,7 +173,7 @@ int main(int argc, char **argv)
                             memcpy(&receivedSeqCount, &ackLine[4], 4);
                             if (senderWindow[receivedWindowCounter] == receivedSeqCount)
                         {
-                            senderWindow[receivedWindowCounter] = 0;
+                            senderWindow[receivedWindowCounter] = -1;
                         }
                              char *thing;
                              thing = "";
@@ -182,8 +182,8 @@ int main(int argc, char **argv)
                          }
                      }
                  }
-             } while (senderWindow[0] != 0 && senderWindow[1] != 0 && senderWindow[2] != 0 &&
-                      senderWindow[3] != 0 && senderWindow[4] != 0);
+             } while (senderWindow[0] == 0 && senderWindow[1] == 0 && senderWindow[2] == 0 &&
+                      senderWindow[3] == 0 && senderWindow[4] == 0);
 
             /*remove this?
             do a time out to handle the EOF
