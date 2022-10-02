@@ -26,15 +26,16 @@ int main(int argc, char **argv)
   timeout.tv_usec = 0;
   int windowCounter = 0;
   // acknowledgementsSent = 0;
-  //  // if they can receive more packets
-  //  int receivingWindow[5] = {0, 0, 0, 0, 0};
+  //Hold the current sequence number
+  int receivingWindow[5] = {0, 0, 0, 0, 0};
+  char windowValue[5][255];
   //  int acknowledgements[6] = {0, 0, 0, 0, 0, 0};
   //  int senderReceipt[6];
   int fileSequence = 0;
   int tempSequence = 0;
   int nextPacket = 0;
   // Holds server response
-  char serverResponse[5][255];
+  
 
   // Holds the file name for writing
   char *filename;
@@ -65,7 +66,8 @@ int main(int argc, char **argv)
   // Send to server
   sendto(sockfd, &userInput, strlen(userInput), 0,
          (struct sockaddr *)&serveraddr, sizeof(serveraddr));
-  int seqArray[5] = {-1, -1, -1, -1, -1};
+
+  int timeoutCounter = 0;
   do
   {
     char line[264] = "";
@@ -87,11 +89,9 @@ int main(int argc, char **argv)
         printf("Timed out while waiting for server\n");
         for (int i = 0; i < 5; ++i)
         {
-          if (seqArray[i] != -1)
-          {
             char ackLine[9] = "";
-            memcpy(&ackLine[0], &windowCounter, 4);
-            memcpy(&ackLine[4], &fileSequence, 4);
+            memcpy(&ackLine[0], &i, 4);
+            memcpy(&ackLine[4], &receivingWindow[i], 4);
             sendto(sockfd, ackLine, 8, 0,
                    (struct sockaddr *)&serveraddr, sizeof(serveraddr));
 
@@ -99,10 +99,8 @@ int main(int argc, char **argv)
           }
         }
       }
-    }
     else
     {
-      // TODO: Check to see if there is a received ERROR opening file
       if (strstr(line, "EOF"))
       {
         running = false;
@@ -115,21 +113,20 @@ int main(int argc, char **argv)
       memcpy(&windowCounter, &line[0], 4);
       memcpy(&tempSequence, &line[4], 4);
 
-      if (tempSequence > fileSequence)
+      if (tempSequence > receivingWindow[windowCounter])
       {
-        memcpy(&fileSequence, &line[4], 4);
+        memcpy(&receivingWindow[windowCounter], &line[4], 4);
       }
-      strcpy(serverResponse[windowCounter], &line[8]);
-      seqArray[windowCounter] = fileSequence;
+      strcpy(windowValue[windowCounter], &line[8]);
 
       // print the packet contents
       printf("Received packet\n");
-      printf("Server Response: %s\n", serverResponse[windowCounter]);
+      printf("Server Response: %s\n", windowValue[windowCounter]);
       printf("Received at window : %d\n", windowCounter);
-      printf("Sequence count : %d\n", fileSequence);
+      printf("Sequence count : %d\n", receivingWindow[windowCounter]);
 
       // Check if the file steam has ended
-      if (!strcmp(serverResponse[windowCounter], "EOF"))
+      if (!strcmp(windowValue[windowCounter], "EOF"))
       {
         printf("Running now false\n");
         running = false;
@@ -141,12 +138,12 @@ int main(int argc, char **argv)
         {
           printf("Adding packet contents to file\n\n");
           // add the response to the file
-          fputs(serverResponse[windowCounter], file);
+          fputs(windowValue[windowCounter], file);
           nextPacket++;
 
           char ackLine[9] = "";
           memcpy(&ackLine[0], &windowCounter, 4);
-          memcpy(&ackLine[4], &fileSequence, 4);
+          memcpy(&ackLine[4], &receivingWindow[windowCounter], 4);
           sendto(sockfd, ackLine, 8, 0,
                  (struct sockaddr *)&serveraddr, sizeof(serveraddr));
 
@@ -156,12 +153,13 @@ int main(int argc, char **argv)
         {
           for (int i = 0; i < 5; ++i)
           {
-            if (seqArray[i] == nextPacket)
+            if (receivingWindow[i] == nextPacket)
             {
-              fputs(serverResponse[i], file);
+              fputs(windowValue[i], file);
+              nextPacket++;
               char ackLine[9] = "";
               memcpy(&ackLine[0], &i, 4);
-              memcpy(&ackLine[4], &seqArray[i], 4);
+              memcpy(&ackLine[4], &receivingWindow[i], 4);
               sendto(sockfd, ackLine, 8, 0,
                      (struct sockaddr *)&serveraddr, sizeof(serveraddr));
             }

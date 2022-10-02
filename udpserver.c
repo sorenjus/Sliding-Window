@@ -59,9 +59,6 @@ int main(int argc, char **argv)
         // if the file is Null return the error message
         if (file == NULL)
         {
-            /*this should be send to the client as well,
-            they dont know there was an error
-            */
             printf("Error! Could not open file\n");
             char line[263] = "Error! Could not open file.";
             sendto(sockfd, line, 263, 0,
@@ -99,9 +96,6 @@ int main(int argc, char **argv)
                 }
                 else
                 {
-                    /*
-                    Move the recurve from server here, then resend anything from window counter and up
-                    */
                     int n = recvfrom(sockfd, ackLine, 9, 0,
                                      (struct sockaddr *)&clientaddr, &len);
                     if (n == -1)
@@ -193,14 +187,15 @@ int main(int argc, char **argv)
             /*remove this?
             do a time out to handle the EOF
             */
-            // do
-            // {
+           do
+            {
             printf("Got here\n");
             char *str = "EOF";
+            char line[263] = "";
             running = false;
+            memcpy(&line[8], &str, 255);
             sendto(sockfd, str, 263, 0,
                    (struct sockaddr *)&clientaddr, sizeof(clientaddr));
-            char line[264] = "";
             // receive the packet from the server
             recvfrom(sockfd, line, 255, 0,
                      (struct sockaddr *)&clientaddr, &len);
@@ -209,7 +204,8 @@ int main(int argc, char **argv)
                 running = false;
                 break;
             }
-            // } while (running);
+            } while (running);
+            
             // another while loop after we exit
             // keep running until we receive back from the client "EOF"
         }
