@@ -93,6 +93,9 @@ int main(int argc, char **argv)
             }
             else
             {
+/*
+Move the recurve from server here, then resend anything from window counter and up
+*/
                 char line[263] = "";
                 memcpy(&line[0], &windowCounter, 4);
                 memcpy(&line[4], &senderWindow[windowCounter], 4);
@@ -108,8 +111,11 @@ int main(int argc, char **argv)
             		printf("Timed out while waiting to receive\n");
             	}
             } else {
+
                 memcpy(&currentWindowCounter, &ackLine[0], 4);
                 memcpy(&currentCount, &ackLine[4], 4);
+/*change this to reset when the server sequence = ack sequence
+*/
                 senderWindow[currentWindowCounter] = 0;
                 char *thing;
                 thing = "";
