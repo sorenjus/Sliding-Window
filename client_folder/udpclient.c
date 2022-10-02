@@ -96,9 +96,10 @@ int main(int argc, char **argv)
     }
     else
     {
-
+      // TODO: Check to see if there is a received ERROR opening file
       if (strstr(line, "EOF"))
       {
+        running = false;
         char *str = "EOF";
         sendto(sockfd, str, 263, 0,
                (struct sockaddr *)&serveraddr, sizeof(clientaddr));
