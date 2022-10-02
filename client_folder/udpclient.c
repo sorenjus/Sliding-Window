@@ -78,6 +78,19 @@ int main(int argc, char **argv)
       if (errno == EWOULDBLOCK)
       {
         printf("Timed out while waiting for server\n");
+        for (int i = 0; i < 5; ++i)
+        {
+          if (seqArray[i] != -1)
+          {
+            char ackLine[9] = "";
+            memcpy(&ackLine[0], &windowCounter, 4);
+            memcpy(&ackLine[4], &fileSequence, 4);
+            sendto(sockfd, ackLine, 8, 0,
+                   (struct sockaddr *)&serveraddr, sizeof(serveraddr));
+
+            printf("Sent acknowledgement\nWindow : %d\nCurrent sequence : %d\n\n", windowCounter, fileSequence);
+          }
+        }
       }
     }
     else
