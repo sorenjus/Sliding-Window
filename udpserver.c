@@ -143,45 +143,44 @@ int main(int argc, char **argv)
                     }
                 }
             } while (!feof(file));
-            // while ()
 
-            // iterate through the sending window to ensure all packets have been acknowledged
-            // do
-            // {
-            //     for (int i = 0; i < 5; i++)
-            //     {
-            //         if (senderWindow[i] != 0)
-            //         {
-            //             char line[263] = "";
-            //             memcpy(&line[0], &i, 4);
-            //             memcpy(&line[4], &senderWindow[i], 4);
-            //             strcpy(&line[8], &windowValue[i][0]);
+            //iterate through the sending window to ensure all packets have been acknowledged
+            do
+            {
+                for (int i = 0; i < 5; i++)
+                {
+                    if (senderWindow[i] != 0)
+                    {
+                        char line[263] = "";
+                        memcpy(&line[0], &i, 4);
+                        memcpy(&line[4], &senderWindow[i], 4);
+                        strcpy(&line[8], &windowValue[i][0]);
 
-            //             sendto(sockfd, line, 263, 0,
-            //                    (struct sockaddr *)&clientaddr, sizeof(clientaddr));
-            //             int n = recvfrom(sockfd, ackLine, 9, 0,
-            //                              (struct sockaddr *)&clientaddr, &len);
-            //             if (n == -1)
-            //             {
-            //                 if (errno == EWOULDBLOCK)
-            //                 {
-            //                     printf("Timed out while waiting to receive\n");
-            //                 }
-            //             }
-            //             else
-            //             {
-            //                 memcpy(&receivedWindowCounter, &ackLine[0], 4);
-            //                 memcpy(&receivedSeqCount, &ackLine[4], 4);
-            //                 senderWindow[receivedWindowCounter] = 0;
-            //                 char *thing;
-            //                 thing = "";
-            //                 strcpy(&windowValue[receivedWindowCounter][0], thing);
-            //                 printf("sender window boolean : %d\nReturn window value : %d\nReturned sequence number : %d\n\n", senderWindow[receivedWindowCounter], receivedWindowCounter, receivedSeqCount);
-            //             }
-            //         }
-            //     }
-            // } while (senderWindow[0] != 0 && senderWindow[1] != 0 && senderWindow[2] != 0 &&
-            //          senderWindow[3] != 0 && senderWindow[4] != 0);
+                        sendto(sockfd, line, 263, 0,
+                               (struct sockaddr *)&clientaddr, sizeof(clientaddr));
+                        int n = recvfrom(sockfd, ackLine, 9, 0,
+                                         (struct sockaddr *)&clientaddr, &len);
+                        if (n == -1)
+                        {
+                            if (errno == EWOULDBLOCK)
+                            {
+                                printf("Timed out while waiting to receive\n");
+                            }
+                        }
+                        else
+                        {
+                            memcpy(&receivedWindowCounter, &ackLine[0], 4);
+                            memcpy(&receivedSeqCount, &ackLine[4], 4);
+                            senderWindow[receivedWindowCounter] = 0;
+                             char *thing;
+                             thing = "";
+                             strcpy(&windowValue[receivedWindowCounter][0], thing);
+                             printf("sender window boolean : %d\nReturn window value : %d\nReturned sequence number : %d\n\n", senderWindow[receivedWindowCounter], receivedWindowCounter, receivedSeqCount);
+                         }
+                     }
+                 }
+             } while (senderWindow[0] != 0 && senderWindow[1] != 0 && senderWindow[2] != 0 &&
+                      senderWindow[3] != 0 && senderWindow[4] != 0);
 
             /*remove this?
             do a time out to handle the EOF

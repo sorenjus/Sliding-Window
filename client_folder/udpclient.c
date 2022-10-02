@@ -172,6 +172,24 @@ int main(int argc, char **argv)
     }
   } while (running);
 
+  do{
+    for (int i = 0; i < 5; ++i)
+          {
+            if (receivingWindow[i] == nextPacket)
+            {
+              fputs(windowValue[i], file);
+              nextPacket++;
+              char ackLine[9] = "";
+              memcpy(&ackLine[0], &i, 4);
+              memcpy(&ackLine[4], &receivingWindow[i], 4);
+              sendto(sockfd, ackLine, 8, 0,
+                     (struct sockaddr *)&serveraddr, sizeof(serveraddr));
+            }
+          }
+  }while(receivingWindow[0] > nextPacket && receivingWindow[1] > nextPacket && 
+  receivingWindow[2] > nextPacket && receivingWindow[3] > nextPacket &&
+   receivingWindow[4] > nextPacket);
+
   fclose(file);
   close(sockfd);
 
