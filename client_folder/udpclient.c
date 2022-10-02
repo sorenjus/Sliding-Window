@@ -68,12 +68,18 @@ int main(int argc, char **argv)
   int seqArray[5] = {-1, -1, -1, -1, -1};
   do
   {
-    /*add a time out here. If it times out, resend all acks?
-     */
     char line[264] = "";
     // receive the packet from the server
     int t = recvfrom(sockfd, line, 255, 0,
                      (struct sockaddr *)&serveraddr, &len);
+    // Determine if the server could not open file
+    if (strstr(line, "Error!"))
+    {
+      printf("Server could not find file.\n");
+      fclose(file);
+      close(sockfd);
+      return 0;
+    }
     if (t == -1)
     {
       if (errno == EWOULDBLOCK)
@@ -108,9 +114,7 @@ int main(int argc, char **argv)
 
       memcpy(&windowCounter, &line[0], 4);
       memcpy(&tempSequence, &line[4], 4);
-      /* copy this to a temp variable first and compare it to the current held sequence
-      If greater, copy and continue. Else ignore
-      */
+
       if (tempSequence > fileSequence)
       {
         memcpy(&fileSequence, &line[4], 4);
