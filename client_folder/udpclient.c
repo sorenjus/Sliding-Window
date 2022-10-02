@@ -31,8 +31,6 @@ int main(int argc, char **argv)
   char windowValue[5][255];
   //  int acknowledgements[6] = {0, 0, 0, 0, 0, 0};
   //  int senderReceipt[6];
-  int fileSequence = 0;
-  int tempSequence = 0;
   int nextPacket = 0;
   // Holds server response
   
@@ -56,6 +54,7 @@ int main(int argc, char **argv)
   scanf("%s", userInput);
   printf("Retrieving %s...\n", userInput);
   filename = userInput;
+  int tempSequence = 0;
 
   if ((file = fopen(filename, "w")) == NULL)
   {
@@ -79,6 +78,10 @@ int main(int argc, char **argv)
     {
       printf("Server could not find file.\n");
       fclose(file);
+      if (remove(filename) != 0)
+      {
+        printf("Error deleting file\n");
+      }
       close(sockfd);
       return 0;
     }
@@ -95,7 +98,7 @@ int main(int argc, char **argv)
             sendto(sockfd, ackLine, 8, 0,
                    (struct sockaddr *)&serveraddr, sizeof(serveraddr));
 
-            printf("Sent acknowledgement\nWindow : %d\nCurrent sequence : %d\n\n", windowCounter, fileSequence);
+            printf("Sent acknowledgement\nWindow : %d\nCurrent sequence : %d\n\n", windowCounter, receivingWindow[windowCounter]);
           }
         }
       }
@@ -134,7 +137,7 @@ int main(int argc, char **argv)
       else
       {
         // if the packet is the next packet in the sequence, add it to the file and send acknowledgement
-        if (fileSequence == nextPacket)
+        if (receivingWindow[windowCounter] == nextPacket)
         {
           printf("Adding packet contents to file\n\n");
           // add the response to the file
@@ -147,7 +150,7 @@ int main(int argc, char **argv)
           sendto(sockfd, ackLine, 8, 0,
                  (struct sockaddr *)&serveraddr, sizeof(serveraddr));
 
-          printf("Sent acknowledgement\nWindow : %d\nCurrent sequence : %d\n\n", windowCounter, fileSequence);
+          printf("Sent acknowledgement\nWindow : %d\nCurrent sequence : %d\n\n", windowCounter, receivingWindow[windowCounter]);
         }
         else
         {

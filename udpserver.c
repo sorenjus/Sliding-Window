@@ -75,24 +75,24 @@ int main(int argc, char **argv)
                 if (senderWindow[windowCounter] == 0)
                 {
                     fgets(&windowValue[windowCounter][0], 255, file);
+                    senderWindow[windowCounter] = fileSequence;
+                    fileSequence++;
                     char line[263] = "";
                     memcpy(&line[0], &windowCounter, 4);
-                    memcpy(&line[4], &fileSequence, 4);
+                    memcpy(&line[4], &senderWindow[windowCounter], 4);
                     strcpy(&line[8], &windowValue[windowCounter][0]);
 
                     sendto(sockfd, line, 263, 0,
                            (struct sockaddr *)&clientaddr, sizeof(clientaddr));
                     // printf("%*s\n", &line);
                     printf("Sent packet at window %d\n", windowCounter);
-                    printf("Sequence number : %d\n", fileSequence);
+                    printf("Sequence number : %d\n", senderWindow[windowCounter]);
                     printf("packet contents : %s\n", windowValue[windowCounter]);
-                    senderWindow[windowCounter] = fileSequence;
                     windowCounter++;
                     if (windowCounter == 5)
                     {
                         windowCounter = 0;
                     }
-                    fileSequence++;
                 }
                 else
                 {
@@ -132,11 +132,10 @@ int main(int argc, char **argv)
                         memcpy(&receivedSeqCount, &ackLine[4], 4);
                         /*change this to reset when the server sequence = ack sequence
                          */
-                        if (fileSequence == receivedSeqCount)
+                        if (senderWindow[receivedWindowCounter] == receivedSeqCount)
                         {
-                            fileSequence = 0;
+                            senderWindow[receivedWindowCounter] = 0;
                         }
-                        senderWindow[receivedWindowCounter] = 0;
                         char *thing;
                         thing = "";
                         strcpy(&windowValue[receivedWindowCounter][0], thing);
