@@ -27,7 +27,7 @@ int main(int argc, char **argv)
   int windowCounter = 0;
   // acknowledgementsSent = 0;
   //Hold the current sequence number
-  int receivingWindow[5] = {0, 0, 0, 0, 0};
+  int receivingWindow[5] = {-1, -1, -1, -1, -1};
   char windowValue[5][255];
   //  int acknowledgements[6] = {0, 0, 0, 0, 0, 0};
   //  int senderReceipt[6];
@@ -93,7 +93,7 @@ int main(int argc, char **argv)
         for (int i = 0; i < 5; ++i)
         {
             char ackLine[9] = "";
-            memcpy(&ackLine[0], i, 4);
+            memcpy(&ackLine[0], &i, 4);
             memcpy(&ackLine[4], &receivingWindow[i], 4);
             sendto(sockfd, ackLine, 8, 0,
                    (struct sockaddr *)&serveraddr, sizeof(serveraddr));
@@ -185,9 +185,9 @@ int main(int argc, char **argv)
                      (struct sockaddr *)&serveraddr, sizeof(serveraddr));
             }
           }
-  }while(receivingWindow[0] < nextPacket && receivingWindow[1] < nextPacket && 
-  receivingWindow[2] < nextPacket && receivingWindow[3] < nextPacket &&
-   receivingWindow[4] < nextPacket);
+  }while(receivingWindow[0] > nextPacket && receivingWindow[1] > nextPacket && 
+  receivingWindow[2] > nextPacket && receivingWindow[3] > nextPacket &&
+   receivingWindow[4] > nextPacket);
 
   fclose(file);
   close(sockfd);

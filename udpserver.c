@@ -50,8 +50,15 @@ int main(int argc, char **argv)
     while (running)
     {
         // received packet from the client with the file name
-        recvfrom(sockfd, fileRequested, 5000, 0,
+        int f = recvfrom(sockfd, fileRequested, 5000, 0,
                  (struct sockaddr *)&clientaddr, &len); // client info added to clientaddr
+        if (f == -1)
+                    {
+                        if (errno == EWOULDBLOCK)
+                        {printf("Waiting for file name\n\n");
+                        }
+                    }
+                    else{
         char *fileName = fileRequested;
         FILE *file;
         // Read the requested file
@@ -149,7 +156,7 @@ int main(int argc, char **argv)
             {
                 for (int i = 0; i < 5; i++)
                 {
-                    if (senderWindow[i] != 0)
+                    if (senderWindow[i] != -1)
                     {
                         char line[263] = "";
                         memcpy(&line[0], &i, 4);
@@ -193,14 +200,14 @@ int main(int argc, char **argv)
             printf("Got here\n");
             char *str = "EOF";
             char line[263] = "";
-            running = false;
+            running = true;
             memcpy(&line[8], &str, 255);
             sendto(sockfd, str, 263, 0,
                    (struct sockaddr *)&clientaddr, sizeof(clientaddr));
             // receive the packet from the server
             recvfrom(sockfd, line, 255, 0,
                      (struct sockaddr *)&clientaddr, &len);
-            if (strstr(line, "EOF"))
+            if (!strstr(line, "EOF"))
             {
                 running = false;
                 break;
@@ -211,6 +218,7 @@ int main(int argc, char **argv)
             // keep running until we receive back from the client "EOF"
         }
         fclose(file);
+    }
     }
 
     close(sockfd);
