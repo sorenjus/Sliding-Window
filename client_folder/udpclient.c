@@ -31,6 +31,7 @@ int main(int argc, char **argv)
   //  int acknowledgements[6] = {0, 0, 0, 0, 0, 0};
   //  int senderReceipt[6];
   int fileSequence = 0;
+  int tempSequence = 0;
   int nextPacket = 0;
   // Holds server response
   char serverResponse[5][255];
@@ -105,10 +106,14 @@ int main(int argc, char **argv)
       }
 
       memcpy(&windowCounter, &line[0], 4);
-      memcpy(&fileSequence, &line[4], 4);
+      memcpy(&tempSequence, &line[4], 4);
       /* copy this to a temp variable first and compare it to the current held sequence
       If greater, copy and continue. Else ignore
       */
+      if (tempSequence > fileSequence)
+      {
+        memcpy(&fileSequence, &line[4], 4);
+      }
       strcpy(serverResponse[windowCounter], &line[8]);
       seqArray[windowCounter] = fileSequence;
 
