@@ -9,6 +9,8 @@
 
 bool running = true;
 
+//Authors : Justin Sorensen, Meghan Harris
+
 int main(int argc, char **argv)
 {
     // define the socket to be used by the server
