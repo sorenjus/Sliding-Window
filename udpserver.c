@@ -51,124 +51,76 @@ int main(int argc, char **argv)
     {
         // received packet from the client with the file name
         int f = recvfrom(sockfd, fileRequested, 5000, 0,
-                 (struct sockaddr *)&clientaddr, &len); // client info added to clientaddr
+                         (struct sockaddr *)&clientaddr, &len); // client info added to clientaddr
         if (f == -1)
-                    {
-                        if (errno == EWOULDBLOCK)
-                        {printf("Waiting for file name\n\n");
-                        }
-                    }
-                    else{
-        char *fileName = fileRequested;
-        FILE *file;
-        // Read the requested file
-        unsigned char buffer[10];
-
-        //file = fopen(fileName, "r+");
-        file = fopen(fileName,"rb");  // r for read, b for binary
-        // if the file is Null return the error message
-        if (file == NULL)
         {
-            printf("Error! Could not open file\n");
-            char line[263] = "Error! Could not open file.";
-            sendto(sockfd, line, 263, 0,
-                   (struct sockaddr *)&clientaddr, sizeof(clientaddr));
-            exit(-1);
+            if (errno == EWOULDBLOCK)
+            {
+                printf("Waiting for file name\n\n");
+            }
         }
-
-        printf("Received from client: %s\n", fileRequested);
-        // Wait for the client to make a request
-        if (strcmp(fileRequested, "") != 0)
+        else
         {
-            do
+            char *fileName = fileRequested;
+            FILE *file;
+            // Read the requested file
+            bool text = strstr(fileName, ".txt");
+
+            if (text)
             {
-                if (senderWindow[windowCounter] == -1)
-                {
-                    fread(&windowValue[windowCounter][0],sizeof(windowValue[windowCounter][0]),1,file); // read
-                    //fgets(&windowValue[windowCounter][0], 255, file);
-                    senderWindow[windowCounter] = fileSequence;
-                    fileSequence++;
-                    char line[263] = "";
-                    memcpy(&line[0], &windowCounter, 4);
-                    memcpy(&line[4], &senderWindow[windowCounter], 4);
-                    strcpy(&line[8], &windowValue[windowCounter][0]);
-
-                    sendto(sockfd, line, 263, 0,
-                           (struct sockaddr *)&clientaddr, sizeof(clientaddr));
-                    // printf("%*s\n", &line);
-                    printf("Sent packet at window %d\n", windowCounter);
-                    printf("Sequence number : %d\n", senderWindow[windowCounter]);
-                    printf("packet contents : %s\n", windowValue[windowCounter]);
-                    windowCounter++;
-                    if (windowCounter == 5)
-                    {
-                        windowCounter = 0;
-                    }
-                }
-                else
-                {
-                    int n = recvfrom(sockfd, ackLine, 9, 0,
-                                     (struct sockaddr *)&clientaddr, &len);
-                    if (n == -1)
-                    {
-                        if (errno == EWOULDBLOCK)
-                        {
-                            printf("Timed out while waiting to receive\n");
-
-                            for (int i = windowCounter; i < 5; ++i)
-                            {
-                                char line[263] = "";
-                                memcpy(&line[0], &i, 4);
-                                memcpy(&line[4], &senderWindow[i], 4);
-                                strcpy(&line[8], &windowValue[i][0]);
-                                sendto(sockfd, line, 263, 0,
-                                       (struct sockaddr *)&clientaddr, sizeof(clientaddr));
-                            }
-                        }
-                    }
-
-                    // printf("receiving\n");
-                    // int n = recvfrom(sockfd, ackLine, 9, 0,
-                    //                  (struct sockaddr *)&clientaddr, &len);
-                    // if (n == -1)
-                    // {
-                    //     if (errno == EWOULDBLOCK)
-                    //     {
-                    //         printf("Timed out while waiting to receive\n");
-                    //     }
-                    // }
-                    else
-                    {
-                        memcpy(&receivedWindowCounter, &ackLine[0], 4);
-                        memcpy(&receivedSeqCount, &ackLine[4], 4);
-                        /*change this to reset when the server sequence = ack sequence
-                         */
-                        if (senderWindow[receivedWindowCounter] == receivedSeqCount)
-                        {
-                            senderWindow[receivedWindowCounter] = -1;
-                        }
-                        char *thing;
-                        thing = "";
-                        strcpy(&windowValue[receivedWindowCounter][0], thing);
-                        printf("sender window boolean : %d\nReturn window value : %d\nReturned sequence number : %d\n\n", senderWindow[receivedWindowCounter], receivedWindowCounter, receivedSeqCount);
-                    }
-                }
-            } while (!feof(file));
-
-            //iterate through the sending window to ensure all packets have been acknowledged
-            do
+                file = fopen(fileName, "r+");
+            }
+            else
             {
-                for (int i = 0; i < 5; i++)
+                file = fopen(fileName, "rb"); // r for read, b for binary
+            }
+            // if the file is Null return the error message
+            if (file == NULL)
+            {
+                printf("Error! Could not open file\n");
+                char line[263] = "Error! Could not open file.";
+                sendto(sockfd, line, 263, 0,
+                       (struct sockaddr *)&clientaddr, sizeof(clientaddr));
+                exit(-1);
+            }
+
+            printf("Received from client: %s\n", fileRequested);
+            // Wait for the client to make a request
+            if (strcmp(fileRequested, "") != 0)
+            {
+                do
                 {
-                    if (senderWindow[i] != -1)
+                    if (senderWindow[windowCounter] == -1)
                     {
+                        if (text)
+                        {
+                            fgets(&windowValue[windowCounter][0], 255, file);
+                        }
+                        else
+                        {
+                            fread(&windowValue[windowCounter][0], sizeof(windowValue[windowCounter][0]), 1, file); // read
+                        }
+                        senderWindow[windowCounter] = fileSequence;
+                        fileSequence++;
                         char line[263] = "";
-                        memcpy(&line[0], &i, 4);
-                        memcpy(&line[4], &senderWindow[i], 4);
-                        strcpy(&line[8], &windowValue[i][0]);
+                        memcpy(&line[0], &windowCounter, 4);
+                        memcpy(&line[4], &senderWindow[windowCounter], 4);
+                        strcpy(&line[8], &windowValue[windowCounter][0]);
 
                         sendto(sockfd, line, 263, 0,
                                (struct sockaddr *)&clientaddr, sizeof(clientaddr));
+                        // printf("%*s\n", &line);
+                        printf("Sent packet at window %d\n", windowCounter);
+                        printf("Sequence number : %d\n", senderWindow[windowCounter]);
+                        printf("packet contents : %s\n", windowValue[windowCounter]);
+                        windowCounter++;
+                        if (windowCounter == 5)
+                        {
+                            windowCounter = 0;
+                        }
+                    }
+                    else
+                    {
                         int n = recvfrom(sockfd, ackLine, 9, 0,
                                          (struct sockaddr *)&clientaddr, &len);
                         if (n == -1)
@@ -176,53 +128,115 @@ int main(int argc, char **argv)
                             if (errno == EWOULDBLOCK)
                             {
                                 printf("Timed out while waiting to receive\n");
+
+                                for (int i = windowCounter; i < 5; ++i)
+                                {
+                                    char line[263] = "";
+                                    memcpy(&line[0], &i, 4);
+                                    memcpy(&line[4], &senderWindow[i], 4);
+                                    strcpy(&line[8], &windowValue[i][0]);
+                                    sendto(sockfd, line, 263, 0,
+                                           (struct sockaddr *)&clientaddr, sizeof(clientaddr));
+                                }
                             }
                         }
+
+                        // printf("receiving\n");
+                        // int n = recvfrom(sockfd, ackLine, 9, 0,
+                        //                  (struct sockaddr *)&clientaddr, &len);
+                        // if (n == -1)
+                        // {
+                        //     if (errno == EWOULDBLOCK)
+                        //     {
+                        //         printf("Timed out while waiting to receive\n");
+                        //     }
+                        // }
                         else
                         {
                             memcpy(&receivedWindowCounter, &ackLine[0], 4);
                             memcpy(&receivedSeqCount, &ackLine[4], 4);
+                            /*change this to reset when the server sequence = ack sequence
+                             */
                             if (senderWindow[receivedWindowCounter] == receivedSeqCount)
-                        {
-                            senderWindow[receivedWindowCounter] = -1;
+                            {
+                                senderWindow[receivedWindowCounter] = -1;
+                            }
+                            char *thing;
+                            thing = "";
+                            strcpy(&windowValue[receivedWindowCounter][0], thing);
+                            printf("sender window boolean : %d\nReturn window value : %d\nReturned sequence number : %d\n\n", senderWindow[receivedWindowCounter], receivedWindowCounter, receivedSeqCount);
                         }
-                             char *thing;
-                             thing = "";
-                             strcpy(&windowValue[receivedWindowCounter][0], thing);
-                             printf("sender window boolean : %d\nReturn window value : %d\nReturned sequence number : %d\n\n", senderWindow[receivedWindowCounter], receivedWindowCounter, receivedSeqCount);
-                         }
-                     }
-                 }
-             } while (senderWindow[0] == 0 && senderWindow[1] == 0 && senderWindow[2] == 0 &&
-                      senderWindow[3] == 0 && senderWindow[4] == 0);
+                    }
+                } while (!feof(file));
 
-            /*remove this?
-            do a time out to handle the EOF
-            */
-           do
-            {
-            printf("Got here\n");
-            char *str = "EOF";
-            char line[263] = "";
-            running = true;
-            memcpy(&line[8], &str, 255);
-            sendto(sockfd, str, 263, 0,
-                   (struct sockaddr *)&clientaddr, sizeof(clientaddr));
-            // receive the packet from the server
-            recvfrom(sockfd, line, 255, 0,
-                     (struct sockaddr *)&clientaddr, &len);
-            if (!strstr(line, "EOF"))
-            {
-                running = false;
-                break;
+                // iterate through the sending window to ensure all packets have been acknowledged
+                do
+                {
+                    for (int i = 0; i < 5; i++)
+                    {
+                        if (senderWindow[i] != -1)
+                        {
+                            char line[263] = "";
+                            memcpy(&line[0], &i, 4);
+                            memcpy(&line[4], &senderWindow[i], 4);
+                            strcpy(&line[8], &windowValue[i][0]);
+
+                            sendto(sockfd, line, 263, 0,
+                                   (struct sockaddr *)&clientaddr, sizeof(clientaddr));
+                            int n = recvfrom(sockfd, ackLine, 9, 0,
+                                             (struct sockaddr *)&clientaddr, &len);
+                            if (n == -1)
+                            {
+                                if (errno == EWOULDBLOCK)
+                                {
+                                    printf("Timed out while waiting to receive\n");
+                                }
+                            }
+                            else
+                            {
+                                memcpy(&receivedWindowCounter, &ackLine[0], 4);
+                                memcpy(&receivedSeqCount, &ackLine[4], 4);
+                                if (senderWindow[receivedWindowCounter] == receivedSeqCount)
+                                {
+                                    senderWindow[receivedWindowCounter] = -1;
+                                }
+                                char *thing;
+                                thing = "";
+                                strcpy(&windowValue[receivedWindowCounter][0], thing);
+                                printf("sender window boolean : %d\nReturn window value : %d\nReturned sequence number : %d\n\n", senderWindow[receivedWindowCounter], receivedWindowCounter, receivedSeqCount);
+                            }
+                        }
+                    }
+                } while (senderWindow[0] == 0 && senderWindow[1] == 0 && senderWindow[2] == 0 &&
+                         senderWindow[3] == 0 && senderWindow[4] == 0);
+
+                /*remove this?
+                do a time out to handle the EOF
+                */
+                do
+                {
+                    printf("Got here\n");
+                    char *str = "EOF";
+                    char line[263] = "";
+                    running = true;
+                    memcpy(&line[8], &str, 255);
+                    sendto(sockfd, str, 263, 0,
+                           (struct sockaddr *)&clientaddr, sizeof(clientaddr));
+                    // receive the packet from the server
+                    recvfrom(sockfd, line, 255, 0,
+                             (struct sockaddr *)&clientaddr, &len);
+                    if (!strstr(line, "EOF"))
+                    {
+                        running = false;
+                        break;
+                    }
+                } while (running);
+
+                // another while loop after we exit
+                // keep running until we receive back from the client "EOF"
             }
-            } while (running);
-            
-            // another while loop after we exit
-            // keep running until we receive back from the client "EOF"
+            fclose(file);
         }
-        fclose(file);
-    }
     }
 
     close(sockfd);
