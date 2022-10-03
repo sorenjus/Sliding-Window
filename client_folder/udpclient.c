@@ -4,8 +4,6 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include <stdint.h>
-#include <inttypes.h>
 #include <stdbool.h>
 #include <errno.h>
 
@@ -20,20 +18,21 @@ int main(int argc, char **argv)
     return 1;
   }
 
+  int windowCounter = 0;
+  int receivingWindow[5] = {-1, -1, -1, -1, -1};
+  char windowValue[5][255];
+  int tempSequence = 0;
+
+  int nextPacket = 0;
+  // Holds the file name for writing
+  char *filename;
+  // FILE to write contents to
+  FILE *file;
+
   int portNum = 9876;
   struct timeval timeout;
   timeout.tv_sec = 5;
   timeout.tv_usec = 0;
-  int windowCounter = 0;
-  // Hold the current sequence number
-  int receivingWindow[5] = {-1, -1, -1, -1, -1};
-  char windowValue[5][255];
-  int nextPacket = 0;
-  // Holds the file name for writing
-  char *filename;
-  // FILE file to write contents to
-  FILE *file;
-
   setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
   struct sockaddr_in serveraddr, clientaddr;
   socklen_t len = sizeof(clientaddr);
@@ -45,10 +44,10 @@ int main(int argc, char **argv)
   // Asking user for a filename and scanning
   printf("Enter a filename to retrieve: \n");
   char userInput[50];
-  scanf("%50s", userInput);
+  scanf("%49s", userInput);
   printf("Retrieving %s...\n", userInput);
   filename = userInput;
-  int tempSequence = 0;
+
   bool text = strstr(filename, ".txt");
 
   if (text)
@@ -72,7 +71,6 @@ int main(int argc, char **argv)
   sendto(sockfd, &userInput, strlen(userInput), 0,
          (struct sockaddr *)&serveraddr, sizeof(serveraddr));
 
-  int timeoutCounter = 0;
   do
   {
     char line[264] = "";
@@ -91,6 +89,7 @@ int main(int argc, char **argv)
       close(sockfd);
       return 0;
     }
+
     if (t == -1)
     {
       if (errno == EWOULDBLOCK)
@@ -165,7 +164,7 @@ int main(int argc, char **argv)
 
           printf("Sent acknowledgement\nWindow : %d\nCurrent sequence : %d\n\n", windowCounter, receivingWindow[windowCounter]);
         }
-        else
+        else //ensure the next file line does not currently exist in the receivingWindow
         {
           for (int i = 0; i < 5; ++i)
           {
@@ -180,10 +179,6 @@ int main(int argc, char **argv)
                 fwrite(windowValue[i], sizeof(windowValue[i][0]), 1, file); // write 10 bytes from our buffer
               }
               nextPacket++;
-
-              // fputs(windowValue[i], file);
-              // fwrite(windowValue[windowCounter], sizeof(255), 1, file); // write 10 bytes from our buffer
-              // nextPacket++;
             }
             char ackLine[9] = "";
             memcpy(&ackLine[0], &i, 4);
@@ -196,6 +191,7 @@ int main(int argc, char **argv)
     }
   } while (running);
 
+  //Check the receiving window for any values that have not yet been added to the file
   do
   {
     for (int i = 0; i < 5; ++i)
@@ -211,9 +207,6 @@ int main(int argc, char **argv)
           fwrite(windowValue[i], sizeof(windowValue[i][0]), 1, file); // write 10 bytes from our buffer
         }
         nextPacket++;
-        // fputs(windowValue[i], file);
-        // fwrite(windowValue[windowCounter], sizeof(windowValue[windowCounter][0]), 1, file); // write 10 bytes from our buffer
-        // nextPacket++;
         char ackLine[9] = "";
         memcpy(&ackLine[0], &i, 4);
         memcpy(&ackLine[4], &receivingWindow[i], 4);
