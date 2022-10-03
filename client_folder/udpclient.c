@@ -7,7 +7,7 @@
 #include <stdbool.h>
 #include <errno.h>
 
-//Authors : Justin Sorensen, Meghan Harris
+// Authors : Justin Sorensen, Meghan Harris
 
 bool running = true;
 
@@ -31,7 +31,13 @@ int main(int argc, char **argv)
   // FILE to write contents to
   FILE *file;
 
+  char addrIP[20] = "";
   int portNum = 9876;
+  printf("Enter an IP Address :");
+  fgets(addrIP, 5000, stdin);
+  printf("Enter a port number :");
+  scanf("%d%*c", &portNum);
+
   struct timeval timeout;
   timeout.tv_sec = 5;
   timeout.tv_usec = 0;
@@ -40,8 +46,7 @@ int main(int argc, char **argv)
   socklen_t len = sizeof(clientaddr);
   serveraddr.sin_family = AF_INET;
   serveraddr.sin_port = htons(portNum);
-  // serveraddr.sin_addr.s_addr=inet_addr(addrIP);
-  serveraddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+  serveraddr.sin_addr.s_addr = inet_addr(addrIP);
 
   // Asking user for a filename and scanning
   printf("Enter a filename to retrieve: \n");
@@ -79,6 +84,14 @@ int main(int argc, char **argv)
     // receive the packet from the server
     int t = recvfrom(sockfd, line, 255, 0,
                      (struct sockaddr *)&serveraddr, &len);
+
+    //if no new data has been added, timeout, and first packet has received no data
+    if(nextPacket == 0 && t == -1 && receivingWindow[0] == -1){
+      printf("No response from server. Resending file request\n");
+      sendto(sockfd, &userInput, strlen(userInput), 0,
+         (struct sockaddr *)&serveraddr, sizeof(serveraddr));
+    }
+    else {
     // Determine if the server could not open file
     if (strstr(line, "Error!"))
     {
@@ -190,6 +203,7 @@ int main(int argc, char **argv)
           }
         }
       }
+    }
     }
   } while (running);
 

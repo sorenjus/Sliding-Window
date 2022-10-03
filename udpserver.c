@@ -16,6 +16,8 @@ int main(int argc, char **argv)
     // define the socket to be used by the server
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     int portNum = 9876;
+    printf("Enter a port number :");
+  scanf("%d%*c", &portNum);
     struct sockaddr_in serveraddr, clientaddr; // family-type of address|port-deliver to correct app|s_addr-IP address
     serveraddr.sin_family = AF_INET;
     serveraddr.sin_port = htons(portNum);    // htons - creates a two byte number idn the right order
