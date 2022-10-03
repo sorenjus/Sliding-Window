@@ -9,7 +9,7 @@
 
 bool running = true;
 
-//Authors : Justin Sorensen, Meghan Harris
+// Authors : Justin Sorensen, Meghan Harris
 
 int main(int argc, char **argv)
 {
@@ -17,7 +17,7 @@ int main(int argc, char **argv)
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     int portNum = 9876;
     printf("Enter a port number :");
-  scanf("%d%*c", &portNum);
+    scanf("%d%*c", &portNum);
     struct sockaddr_in serveraddr, clientaddr; // family-type of address|port-deliver to correct app|s_addr-IP address
     serveraddr.sin_family = AF_INET;
     serveraddr.sin_port = htons(portNum);    // htons - creates a two byte number idn the right order
@@ -48,8 +48,8 @@ int main(int argc, char **argv)
     int fileSequence = 0;
     while (running)
     {
-    // fileName set to the udpclient entry
-    char fileRequested[5000] = "";
+        // fileName set to the udpclient entry
+        char fileRequested[5000] = "";
 
         // received packet from the client with the file name, or timeout while waiting
         int f = recvfrom(sockfd, fileRequested, 5000, 0,
@@ -65,31 +65,31 @@ int main(int argc, char **argv)
         {
             if (strcmp(fileRequested, "") != 0)
             {
-            char *fileName = fileRequested;
-            FILE *file;
-            //detect if the file is a txt or binary file
-            bool text = strstr(fileName, ".txt");
+                char *fileName = fileRequested;
+                FILE *file;
+                // detect if the file is a txt or binary file
+                bool text = strstr(fileName, ".txt");
 
-            if (text) //read a text file
-            {
-                file = fopen(fileName, "r+");
-            }
-            else // read a binary file
-            {
-                file = fopen(fileName, "rb");
-            }
+                if (text) // read a text file
+                {
+                    file = fopen(fileName, "r+");
+                }
+                else // read a binary file
+                {
+                    file = fopen(fileName, "rb");
+                }
 
-            // if the file is Null return the error message, exit, and notify the client
-            if (file == NULL)
-            {
-                printf("Error! Could not open file\n");
-                char line[263] = "Error! Could not open file.";
-                sendto(sockfd, line, 263, 0,
-                       (struct sockaddr *)&clientaddr, sizeof(clientaddr));
-                exit(-1);
-            }
+                // if the file is Null return the error message, exit, and notify the client
+                if (file == NULL)
+                {
+                    printf("Error! Could not open file\n");
+                    char line[263] = "Error! Could not open file.";
+                    sendto(sockfd, line, 263, 0,
+                           (struct sockaddr *)&clientaddr, sizeof(clientaddr));
+                    exit(-1);
+                }
 
-            printf("Received from client: %s\n", fileRequested);
+                printf("Received from client: %s\n", fileRequested);
 
                 do
                 {
@@ -166,7 +166,7 @@ int main(int argc, char **argv)
                             printf("sender window boolean : %d\nReturn window value : %d\nReturned sequence number : %d\n\n", senderWindow[receivedWindowCounter], receivedWindowCounter, receivedSeqCount);
                         }
                     }
-                } while (!feof(file)); //reached the end of the file
+                } while (!feof(file)); // reached the end of the file
 
                 // iterate through the sending window to ensure all packets have been acknowledged
                 do
@@ -229,7 +229,6 @@ int main(int argc, char **argv)
                 } while (running);
                 fclose(file);
             }
-
         }
     }
     close(sockfd);
