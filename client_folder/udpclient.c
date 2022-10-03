@@ -111,7 +111,7 @@ int main(int argc, char **argv)
       {
         if (errno == EWOULDBLOCK)
         {
-          printf("Timed out while waiting for server\n");
+          printf("Timed out while waiting for server\nResending acknowledgements\n");
           for (int i = 0; i < 5; ++i)
           {
             char ackLine[9] = "";
@@ -212,6 +212,7 @@ int main(int argc, char **argv)
   // Check the receiving window for any values that have not yet been added to the file
   do
   {
+    printf("Final run through\n");
     for (int i = 0; i < 5; ++i)
     {
       if (receivingWindow[i] == nextPacket)
