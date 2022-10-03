@@ -198,30 +198,31 @@ int main(int argc, char **argv)
                                 if (senderWindow[receivedWindowCounter] == receivedSeqCount)
                                 {
                                     senderWindow[receivedWindowCounter] = -1;
-                                }
-                                char *thing;
+                                    char *thing;
                                 thing = "";
                                 strcpy(&windowValue[receivedWindowCounter][0], thing);
                                 printf("sender window boolean : %d\nReturn window value : %d\nReturned sequence number : %d\n\n", senderWindow[receivedWindowCounter], receivedWindowCounter, receivedSeqCount);
+                                }
                             }
                         }
                     }
-                } while (senderWindow[0] == 0 && senderWindow[1] == 0 && senderWindow[2] == 0 &&
-                         senderWindow[3] == 0 && senderWindow[4] == 0);
+                } while (senderWindow[0] != -1 && senderWindow[1] != -1 && senderWindow[2] != -1 &&
+                         senderWindow[3] != -1 && senderWindow[4] != -1);
 
                 do
                 {
-                    char *str = "EOF";
                     char line[263] = "";
-                    running = true;
-                    memcpy(&line[8], &str, 255);
-                    sendto(sockfd, str, 263, 0,
+                    int eof = -2;
+                    int returnedInt = 0;
+                    memcpy(&line[4], &eof, 4);
+                    sendto(sockfd, line, 263, 0,
                            (struct sockaddr *)&clientaddr, sizeof(clientaddr));
 
                     // receive the same packet from the server and exit
-                    recvfrom(sockfd, line, 255, 0,
+                    recvfrom(sockfd, line, 263, 0,
                              (struct sockaddr *)&clientaddr, &len);
-                    if (!strstr(line, "EOF"))
+                    memcpy(&returnedInt, &line[4], 4);
+                    if (returnedInt == -2)
                     {
                         running = false;
                         break;
