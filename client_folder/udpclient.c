@@ -7,6 +7,8 @@
 #include <stdbool.h>
 #include <errno.h>
 
+//Authors : Justin Sorensen, Meghan Harris
+
 bool running = true;
 
 int main(int argc, char **argv)
