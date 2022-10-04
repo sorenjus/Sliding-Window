@@ -145,6 +145,7 @@ int main(int argc, char **argv)
           memcpy(&str[4], &tempSequence, 4);
           sendto(sockfd, str, 263, 0,
                  (struct sockaddr *)&serveraddr, sizeof(clientaddr));
+                 break;
         }
         strcpy(windowValue[windowCounter], &line[8]);
 
@@ -214,8 +215,10 @@ int main(int argc, char **argv)
   // Check the receiving window for any values that have not yet been added to the file
   do
   {
+  printf("Final run\n");
     for (int i = 0; i < 5; ++i)
     {
+    printf("Final for\n");
       if (receivingWindow[i] == nextPacket)
       {
         if (text)
@@ -234,8 +237,8 @@ int main(int argc, char **argv)
                (struct sockaddr *)&serveraddr, sizeof(serveraddr));
       }
     }
-  } while (receivingWindow[0] > nextPacket && receivingWindow[1] > nextPacket &&
-           receivingWindow[2] > nextPacket && receivingWindow[3] > nextPacket &&
+  } while (receivingWindow[0] > nextPacket || receivingWindow[1] > nextPacket ||
+           receivingWindow[2] > nextPacket || receivingWindow[3] > nextPacket ||
            receivingWindow[4] > nextPacket);
 
   fclose(file);
