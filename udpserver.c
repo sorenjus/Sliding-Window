@@ -211,17 +211,16 @@ int main(int argc, char **argv)
 
                 do
                 {
-                    char *str = "EOF";
                     char line[263] = "";
-                    running = true;
-                    memcpy(&line[8], &str, 255);
-                    sendto(sockfd, str, 263, 0,
+                    int eof = -2;
+                    int returnedInt = 0;
+                    memcpy(&line[4], &eof, 4);
+                    sendto(sockfd, line, 263, 0,
                            (struct sockaddr *)&clientaddr, sizeof(clientaddr));
-
-                    // receive the same packet from the server and exit
-                    recvfrom(sockfd, line, 255, 0,
+                    recvfrom(sockfd, line, 263, 0,
                              (struct sockaddr *)&clientaddr, &len);
-                    if (!strstr(line, "EOF"))
+                    memcpy(&returnedInt, &line[4], 4);
+                    if (returnedInt == -2)
                     {
                         running = false;
                         break;

@@ -86,7 +86,7 @@ int main(int argc, char **argv)
                      (struct sockaddr *)&serveraddr, &len);
 
     // if no new data has been added, timeout, and first packet has received no data
-    if (nextPacket == 0 && t == -1 && receivingWindow[0] == -1)
+    if (nextPacket == 0 && t == -1 && receivingWindow[0] == -1 && receivingWindow[1] == -1 && receivingWindow[2] == -1 && receivingWindow[3] == -1 && receivingWindow[4] == -1)
     {
       printf("No response from server. Resending file request\n");
       sendto(sockfd, &userInput, strlen(userInput), 0,
@@ -114,26 +114,22 @@ int main(int argc, char **argv)
           printf("Timed out while waiting for server\n");
           for (int i = 0; i < 5; ++i)
           {
-            char ackLine[9] = "";
-            memcpy(&ackLine[0], &i, 4);
-            memcpy(&ackLine[4], &receivingWindow[i], 4);
-            sendto(sockfd, ackLine, 8, 0,
-                   (struct sockaddr *)&serveraddr, sizeof(serveraddr));
+            if (receivingWindow[i] < nextPacket)
+            {
 
-            printf("Sent acknowledgement\nWindow : %d\nCurrent sequence : %d\n\n", i, receivingWindow[i]);
+              char ackLine[9] = "";
+              memcpy(&ackLine[0], &i, 4);
+              memcpy(&ackLine[4], &receivingWindow[i], 4);
+              sendto(sockfd, ackLine, 8, 0,
+                     (struct sockaddr *)&serveraddr, sizeof(serveraddr));
+
+              printf("Sent acknowledgement\nWindow : %d\nCurrent sequence : %d\n\n", i, receivingWindow[i]);
+            }
           }
         }
       }
       else
       {
-        if (strstr(line, "EOF"))
-        {
-          running = false;
-          char *str = "EOF";
-          sendto(sockfd, str, 263, 0,
-                 (struct sockaddr *)&serveraddr, sizeof(clientaddr));
-          break;
-        }
 
         memcpy(&windowCounter, &line[0], 4);
         memcpy(&tempSequence, &line[4], 4);
@@ -141,6 +137,14 @@ int main(int argc, char **argv)
         if (tempSequence > receivingWindow[windowCounter])
         {
           memcpy(&receivingWindow[windowCounter], &line[4], 4);
+        }
+        else if (tempSequence == -2)
+        {
+          running = false;
+          char str[263] = "";
+          memcpy(&str[4], &tempSequence, 4);
+          sendto(sockfd, str, 263, 0,
+                 (struct sockaddr *)&serveraddr, sizeof(clientaddr));
         }
         strcpy(windowValue[windowCounter], &line[8]);
 
@@ -181,28 +185,26 @@ int main(int argc, char **argv)
 
             printf("Sent acknowledgement\nWindow : %d\nCurrent sequence : %d\n\n", windowCounter, receivingWindow[windowCounter]);
           }
-          else // ensure the next file line does not currently exist in the receivingWindow
+
+          for (int i = 0; i < 5; ++i)
           {
-            for (int i = 0; i < 5; ++i)
+            if (receivingWindow[i] == nextPacket)
             {
-              if (receivingWindow[i] == nextPacket)
+              if (text)
               {
-                if (text)
-                {
-                  fputs(windowValue[i], file);
-                }
-                else
-                {
-                  fwrite(windowValue[i], sizeof(windowValue[i][0]), 1, file); // write 10 bytes from our buffer
-                }
-                nextPacket++;
+                fputs(windowValue[i], file);
               }
-              char ackLine[9] = "";
-              memcpy(&ackLine[0], &i, 4);
-              memcpy(&ackLine[4], &receivingWindow[i], 4);
-              sendto(sockfd, ackLine, 8, 0,
-                     (struct sockaddr *)&serveraddr, sizeof(serveraddr));
+              else
+              {
+                fwrite(windowValue[i], sizeof(windowValue[i][0]), 1, file); // write 10 bytes from our buffer
+              }
+              nextPacket++;
             }
+            char ackLine[9] = "";
+            memcpy(&ackLine[0], &i, 4);
+            memcpy(&ackLine[4], &receivingWindow[i], 4);
+            sendto(sockfd, ackLine, 8, 0,
+                   (struct sockaddr *)&serveraddr, sizeof(serveraddr));
           }
         }
       }
