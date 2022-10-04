@@ -22,9 +22,7 @@ int main(int argc, char **argv)
 
   int windowCounter = 0;
   int receivingWindow[5] = {-1, -1, -1, -1, -1};
-  int bufferWindow[5] = {-1, -1, -1, -1, -1};
   char windowValue[5][255];
-  char bufferValue[5][255];
   int tempSequence = 0;
 
   int nextPacket = 0;
@@ -88,7 +86,7 @@ int main(int argc, char **argv)
                      (struct sockaddr *)&serveraddr, &len);
 
     // if no new data has been added, timeout, and first packet has received no data
-    if (nextPacket == 0 && t == -1 && receivingWindow[0] == -1 && receivingWindow[1] == -1 && receivingWindow[2] == -1 && receivingWindow[3] == -1 && receivingWindow[4] == -1)
+    if (nextPacket == 0 && t == -1 && receivingWindow[0] == -1)
     {
       printf("No response from server. Resending file request\n");
       sendto(sockfd, &userInput, strlen(userInput), 0,
@@ -113,56 +111,54 @@ int main(int argc, char **argv)
       {
         if (errno == EWOULDBLOCK)
         {
-          
-            printf("Checking window for next dataline\n");
-            for (int i = 0; i < 5; ++i)
-            {
-                nextPacket++;
-                char ackLine[263] = "";
-                memcpy(&ackLine[0], &i, 4);
-                memcpy(&ackLine[4], &receivingWindow[i], 4);
-                strcpy(&ackLine[8], &windowValue[i][0]);
-                sendto(sockfd, ackLine, 263, 0,
-                       (struct sockaddr *)&serveraddr, sizeof(serveraddr));
-            }
-          
-          printf("Timed out while waiting for server\nResending acknowledgements\n");
+          printf("Timed out while waiting for server\n");
           for (int i = 0; i < 5; ++i)
           {
-            if (receivingWindow[i] == -2)
-            {
-              printf("timeout. received EOF");
-              running = false;
-            }
-            else if (receivingWindow[i] < nextPacket)
-            {
-              char ackLine[263] = "";
-              memcpy(&ackLine[0], &i, 4);
-              memcpy(&ackLine[4], &receivingWindow[i], 4);
-              strcpy(&ackLine[8], &windowValue[i][0]);
-              sendto(sockfd, ackLine, 263, 0,
-                     (struct sockaddr *)&serveraddr, sizeof(serveraddr));
+            char ackLine[9] = "";
+            memcpy(&ackLine[0], &i, 4);
+            memcpy(&ackLine[4], &receivingWindow[i], 4);
+            sendto(sockfd, ackLine, 8, 0,
+                   (struct sockaddr *)&serveraddr, sizeof(serveraddr));
 
-              printf("Sent acknowledgement\nWindow : %d\nCurrent sequence : %d\n\n", i, receivingWindow[i]);
-            }
+            printf("Sent acknowledgement\nWindow : %d\nCurrent sequence : %d\n\n", i, receivingWindow[i]);
           }
         }
       }
       else
       {
+        if (strstr(line, "EOF"))
+        {
+          running = false;
+          char *str = "EOF";
+          sendto(sockfd, str, 263, 0,
+                 (struct sockaddr *)&serveraddr, sizeof(clientaddr));
+          break;
+        }
+
         memcpy(&windowCounter, &line[0], 4);
         memcpy(&tempSequence, &line[4], 4);
 
-        if (tempSequence >= receivingWindow[windowCounter])
+        if (tempSequence > receivingWindow[windowCounter])
         {
           memcpy(&receivingWindow[windowCounter], &line[4], 4);
-          strcpy(windowValue[windowCounter], &line[8]);
         }
-        else if (tempSequence == (receivingWindow[windowCounter] + 5))
-        {
-          memcpy(&bufferWindow[windowCounter], &line[4], 4);
-          strcpy(bufferValue[windowCounter], &line[8]);
+        strcpy(windowValue[windowCounter], &line[8]);
 
+        // print the packet contents
+        printf("Received packet\n");
+        printf("Server Response: %s\n", windowValue[windowCounter]);
+        printf("Received at window : %d\n", windowCounter);
+        printf("Sequence count : %d\n", receivingWindow[windowCounter]);
+
+        // Check if the file steam has ended
+        if (!strcmp(windowValue[windowCounter], "EOF"))
+        {
+          printf("Running now false\n");
+          running = false;
+        }
+        else
+        {
+          // if the packet is the next packet in the sequence, add it to the file and send acknowledgement
           if (receivingWindow[windowCounter] == nextPacket)
           {
             printf("Adding packet contents to file\n\n");
@@ -177,42 +173,16 @@ int main(int argc, char **argv)
             }
             nextPacket++;
 
-            memcpy(&receivingWindow[windowCounter], &bufferWindow[windowCounter], 4); //sequence
-            strcpy(windowValue[windowCounter], bufferValue[windowCounter]); //line
+            char ackLine[9] = "";
+            memcpy(&ackLine[0], &windowCounter, 4);
+            memcpy(&ackLine[4], &receivingWindow[windowCounter], 4);
+            sendto(sockfd, ackLine, 8, 0,
+                   (struct sockaddr *)&serveraddr, sizeof(serveraddr));
+
+            printf("Sent acknowledgement\nWindow : %d\nCurrent sequence : %d\n\n", windowCounter, receivingWindow[windowCounter]);
           }
-        }
-          
-          else if (tempSequence == -2)
+          else // ensure the next file line does not currently exist in the receivingWindow
           {
-            printf("Received EOF");
-            memcpy(&receivingWindow[windowCounter], &line[4], 4);
-            running = false;
-            char ackLine[263] = "";
-              memcpy(&ackLine[0], &windowCounter, 4);
-              memcpy(&ackLine[4], &receivingWindow[windowCounter], 4);
-              strcpy(&ackLine[8], &windowValue[windowCounter][0]);
-              sendto(sockfd, ackLine, 263, 0,
-                     (struct sockaddr *)&serveraddr, sizeof(serveraddr));
-          }
-          
-
-          // print the packet contents
-          printf("Received packet\n");
-          printf("Server Response: %s\n", windowValue[windowCounter]);
-          printf("Received at window : %d\n", windowCounter);
-          printf("Sequence count : %d\n", receivingWindow[windowCounter]);
-
-          char ackLine[263] = "";
-          memcpy(&ackLine[0], &windowCounter, 4);
-          memcpy(&ackLine[4], &receivingWindow[windowCounter], 4);
-          strcpy(&ackLine[8], &windowValue[windowCounter][0]);
-          sendto(sockfd, ackLine, 263, 0,
-                 (struct sockaddr *)&serveraddr, sizeof(serveraddr));
-
-          // ensure the next file line does not currently exist in the receivingWindow
-/*
-          for(int j = 0; j < 5; j++){
-            printf("Checking window for next dataline\n");
             for (int i = 0; i < 5; ++i)
             {
               if (receivingWindow[i] == nextPacket)
@@ -226,50 +196,48 @@ int main(int argc, char **argv)
                   fwrite(windowValue[i], sizeof(windowValue[i][0]), 1, file); // write 10 bytes from our buffer
                 }
                 nextPacket++;
-                char ackLine[263] = "";
-                memcpy(&ackLine[0], &i, 4);
-              memcpy(&ackLine[4], &receivingWindow[i], 4);
-              strcpy(&ackLine[8], &windowValue[i][0]);
-              sendto(sockfd, ackLine, 263, 0,
-                     (struct sockaddr *)&serveraddr, sizeof(serveraddr));
               }
+              char ackLine[9] = "";
+              memcpy(&ackLine[0], &i, 4);
+              memcpy(&ackLine[4], &receivingWindow[i], 4);
+              sendto(sockfd, ackLine, 8, 0,
+                     (struct sockaddr *)&serveraddr, sizeof(serveraddr));
             }
-          }*/
+          }
         }
       }
     }
-    while (running)
-      ;
+  } while (running);
 
-    // Check the receiving window for any values that have not yet been added to the file
-    for (int j = 0; j < 5; j++)
+  // Check the receiving window for any values that have not yet been added to the file
+  do
+  {
+    for (int i = 0; i < 5; ++i)
     {
-      printf("Final run through\n");
-      for (int i = 0; i < 5; ++i)
+      if (receivingWindow[i] == nextPacket)
       {
-        if (receivingWindow[i] == nextPacket)
+        if (text)
         {
-          if (text)
-          {
-            fputs(windowValue[i], file);
-          }
-          else
-          {
-            fwrite(windowValue[i], sizeof(windowValue[i][0]), 1, file); // write 10 bytes from our buffer
-          }
-          nextPacket++;
-          char ackLine[263] = "";
-          memcpy(&ackLine[0], &i, 4);
-          memcpy(&ackLine[4], &receivingWindow[i], 4);
-          strcpy(&ackLine[8], &windowValue[i][0]);
-          sendto(sockfd, ackLine, 263, 0,
-                 (struct sockaddr *)&serveraddr, sizeof(serveraddr));
+          fputs(windowValue[i], file);
         }
+        else
+        {
+          fwrite(windowValue[i], sizeof(windowValue[i][0]), 1, file); // write 10 bytes from our buffer
+        }
+        nextPacket++;
+        char ackLine[9] = "";
+        memcpy(&ackLine[0], &i, 4);
+        memcpy(&ackLine[4], &receivingWindow[i], 4);
+        sendto(sockfd, ackLine, 8, 0,
+               (struct sockaddr *)&serveraddr, sizeof(serveraddr));
       }
     }
+  } while (receivingWindow[0] > nextPacket && receivingWindow[1] > nextPacket &&
+           receivingWindow[2] > nextPacket && receivingWindow[3] > nextPacket &&
+           receivingWindow[4] > nextPacket);
 
-    fclose(file);
-    close(sockfd);
+  fclose(file);
+  close(sockfd);
 
-    return 0;
-  }
+  return 0;
+}
