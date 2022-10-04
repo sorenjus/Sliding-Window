@@ -38,6 +38,7 @@ int main(int argc, char **argv)
     // when an acknowledgement is received, store the acknowledgements windowCounter and file sequence
     int receivedWindowCounter = 0;
     int receivedSeqCount = 0;
+    char receivedWindowValue[255];
     char ackLine[8];
 
     // the current data to be sent in the packet
@@ -128,7 +129,7 @@ int main(int argc, char **argv)
                     }
                     else
                     {
-                        int n = recvfrom(sockfd, ackLine, 9, 0,
+                        int n = recvfrom(sockfd, ackLine, 263, 0,
                                          (struct sockaddr *)&clientaddr, &len);
                         if (n == -1)
                         {
@@ -182,7 +183,7 @@ int main(int argc, char **argv)
                             sendto(sockfd, line, 263, 0,
                                    (struct sockaddr *)&clientaddr, sizeof(clientaddr));
 
-                            int n = recvfrom(sockfd, ackLine, 9, 0,
+                            int n = recvfrom(sockfd, ackLine, 263, 0,
                                              (struct sockaddr *)&clientaddr, &len);
                             if (n == -1)
                             {
@@ -195,13 +196,27 @@ int main(int argc, char **argv)
                             {
                                 memcpy(&receivedWindowCounter, &ackLine[0], 4);
                                 memcpy(&receivedSeqCount, &ackLine[4], 4);
-                                if (senderWindow[receivedWindowCounter] == receivedSeqCount)
+                                strcpy(receivedWindowValue, &ackLine[8]);
+                                if (senderWindow[receivedWindowCounter] == receivedSeqCount && strcmp(receivedWindowValue, &windowValue[receivedWindowCounter][0]) == 0)
                                 {
                                     senderWindow[receivedWindowCounter] = -1;
                                     char *thing;
-                                thing = "";
-                                strcpy(&windowValue[receivedWindowCounter][0], thing);
-                                printf("sender window boolean : %d\nReturn window value : %d\nReturned sequence number : %d\n\n", senderWindow[receivedWindowCounter], receivedWindowCounter, receivedSeqCount);
+                                    thing = "";
+                                    strcpy(&windowValue[receivedWindowCounter][0], thing);
+                                    printf("sender window boolean : %d\nReturn window value : %d\nReturned sequence number : %d\n\n", senderWindow[receivedWindowCounter], receivedWindowCounter, receivedSeqCount);
+                                }
+                                else
+                                {
+                                    char line[263] = "";
+                                    memcpy(&line[0], &windowCounter, 4);
+                                    memcpy(&line[4], &senderWindow[windowCounter], 4);
+                                    strcpy(&line[8], &windowValue[windowCounter][0]);
+                                    sendto(sockfd, line, 263, 0,
+                                           (struct sockaddr *)&clientaddr, sizeof(clientaddr));
+
+                                    printf("Sent packet at window %d\n", windowCounter);
+                                    printf("Sequence number : %d\n", senderWindow[windowCounter]);
+                                    printf("packet contents : %s\n", windowValue[windowCounter]);
                                 }
                             }
                         }
@@ -214,6 +229,7 @@ int main(int argc, char **argv)
                     char line[263] = "";
                     int eof = -2;
                     int returnedInt = 0;
+                    printf("Sending EOF");
                     memcpy(&line[4], &eof, 4);
                     sendto(sockfd, line, 263, 0,
                            (struct sockaddr *)&clientaddr, sizeof(clientaddr));
@@ -225,7 +241,6 @@ int main(int argc, char **argv)
                     if (returnedInt == -2)
                     {
                         running = false;
-                        break;
                     }
                 } while (running);
                 fclose(file);
