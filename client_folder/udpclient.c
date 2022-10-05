@@ -147,7 +147,7 @@ int main(int argc, char **argv)
                  (struct sockaddr *)&serveraddr, sizeof(clientaddr));
                  break;
         }
-        strcpy(windowValue[windowCounter], &line[8]);
+        memcpy(windowValue[windowCounter], &line[8], 255);
 
         // print the packet contents
         printf("Received packet\n");

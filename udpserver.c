@@ -96,11 +96,11 @@ int main(int argc, char **argv)
                     if (senderWindow[windowCounter] == -1)
                     {
 
-                        if (text)
+                        if (text && !feof(file))
                         {
                             fgets(&windowValue[windowCounter][0], 255, file);
                         }
-                        else
+                        else if(!text && !feof(file))
                         {
                             fread(&windowValue[windowCounter][0], sizeof(windowValue[windowCounter][0]), 1, file); // read
                         }
@@ -110,7 +110,7 @@ int main(int argc, char **argv)
                         char line[263] = "";
                         memcpy(&line[0], &windowCounter, 4);
                         memcpy(&line[4], &senderWindow[windowCounter], 4);
-                        strcpy(&line[8], &windowValue[windowCounter][0]);
+                        memcpy(&line[8], &windowValue[windowCounter][0], 255);
                         sendto(sockfd, line, 263, 0,
                                (struct sockaddr *)&clientaddr, sizeof(clientaddr));
 
@@ -141,7 +141,7 @@ int main(int argc, char **argv)
                                     char line[263] = "";
                                     memcpy(&line[0], &i, 4);
                                     memcpy(&line[4], &senderWindow[i], 4);
-                                    strcpy(&line[8], &windowValue[i][0]);
+                                    memcpy(&line[8], &windowValue[i][0], 255);
                                     sendto(sockfd, line, 263, 0,
                                            (struct sockaddr *)&clientaddr, sizeof(clientaddr));
                                 }
@@ -162,52 +162,12 @@ int main(int argc, char **argv)
                             }
                             char *thing;
                             thing = "";
-                            strcpy(&windowValue[receivedWindowCounter][0], thing);
+                            memcpy(&windowValue[receivedWindowCounter][0], thing, 255);
                             printf("sender window boolean : %d\nReturn window value : %d\nReturned sequence number : %d\n\n", senderWindow[receivedWindowCounter], receivedWindowCounter, receivedSeqCount);
                         }
                     }
-                } while (!feof(file)); // reached the end of the file
-
-                // iterate through the sending window to ensure all packets have been acknowledged
-                do
-                {
-                    for (int i = 0; i < 5; i++)
-                    {
-                        if (senderWindow[i] != -1)
-                        {
-                            char line[263] = "";
-                            memcpy(&line[0], &i, 4);
-                            memcpy(&line[4], &senderWindow[i], 4);
-                            strcpy(&line[8], &windowValue[i][0]);
-                            sendto(sockfd, line, 263, 0,
-                                   (struct sockaddr *)&clientaddr, sizeof(clientaddr));
-
-                            int n = recvfrom(sockfd, ackLine, 9, 0,
-                                             (struct sockaddr *)&clientaddr, &len);
-                            if (n == -1)
-                            {
-                                if (errno == EWOULDBLOCK)
-                                {
-                                    printf("Timed out while waiting to receive\n");
-                                }
-                            }
-                            else
-                            {
-                                memcpy(&receivedWindowCounter, &ackLine[0], 4);
-                                memcpy(&receivedSeqCount, &ackLine[4], 4);
-                                if (senderWindow[receivedWindowCounter] == receivedSeqCount)
-                                {
-                                    senderWindow[receivedWindowCounter] = -1;
-                                }
-                                char *thing;
-                                thing = "";
-                                strcpy(&windowValue[receivedWindowCounter][0], thing);
-                                printf("sender window boolean : %d\nReturn window value : %d\nReturned sequence number : %d\n\n", senderWindow[receivedWindowCounter], receivedWindowCounter, receivedSeqCount);
-                            }
-                        }
-                    }
-                } while (senderWindow[0] == -1 && senderWindow[1] == -1 && senderWindow[2] == -1 &&
-                         senderWindow[3] == -1 && senderWindow[4] == -1);
+                } while (!feof(file) || (senderWindow[0] == -1 && senderWindow[1] == -1 && senderWindow[2] == -1 &&
+                         senderWindow[3] == -1 && senderWindow[4] == -1)); // reached the end of the file
 
                 do
                 {
