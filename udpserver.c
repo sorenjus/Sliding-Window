@@ -150,24 +150,31 @@ int main(int argc, char **argv)
 
                         else
                         {
-                            memcpy(&receivedWindowCounter, &ackLine[0], 4);
-                            memcpy(&receivedSeqCount, &ackLine[4], 4);
-
-                            /*if the senderwindows sequence is equal to the received sequence,
-                             * reset the sender window to an empty string
-                             * */
-                            if (senderWindow[receivedWindowCounter] == receivedSeqCount)
+                            printf("Receiving acknowledgements\n");
+                            int temp;
+                            memcpy(&temp, &ackLine[0], 4);
+                            if (temp < 5)
                             {
-                                senderWindow[receivedWindowCounter] = -1;
+
+                                memcpy(&receivedWindowCounter, &ackLine[0], 4);
+                                memcpy(&receivedSeqCount, &ackLine[4], 4);
+
+                                /*if the senderwindows sequence is equal to the received sequence,
+                                 * reset the sender window to an empty string
+                                 * */
+                                if (senderWindow[receivedWindowCounter] == receivedSeqCount)
+                                {
+                                    senderWindow[receivedWindowCounter] = -1;
+                                }
+                                char *thing;
+                                thing = "";
+                                memcpy(&windowValue[receivedWindowCounter][0], thing, 255);
+                                printf("Return window value : %d\nReturned sequence number : %d\n\n", receivedWindowCounter, receivedSeqCount);
                             }
-                            char *thing;
-                            thing = "";
-                            memcpy(&windowValue[receivedWindowCounter][0], thing, 255);
-                            printf("sender window boolean : %d\nReturn window value : %d\nReturned sequence number : %d\n\n", senderWindow[receivedWindowCounter], receivedWindowCounter, receivedSeqCount);
                         }
                     }
-                } while (!feof(file) || (senderWindow[0] == -1 && senderWindow[1] == -1 && senderWindow[2] == -1 &&
-                                         senderWindow[3] == -1 && senderWindow[4] == -1)); // reached the end of the file
+                } while (!feof(file) || (senderWindow[0] != -1 && senderWindow[1] != -1 && senderWindow[2] != -1 &&
+                                         senderWindow[3] != -1 && senderWindow[4] != -1)); // reached the end of the file
 
                 do
                 {

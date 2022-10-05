@@ -189,24 +189,27 @@ int main(int argc, char **argv)
             printf("Sent acknowledgement\nWindow : %d\nCurrent sequence : %d\n\n", windowCounter, receivingWindow[windowCounter]);
           }
 
-          for (int i = 0; i < 5; ++i)
+          for (int j = 0; j < 5; ++j)
           {
-            if (receivingWindow[i] == nextPacket && receivingWindow[i] != -2)
+            for (int i = 0; i < 5; ++i)
             {
-              if (text)
+              if (receivingWindow[i] == nextPacket && receivingWindow[i] != -2)
               {
-                fputs(windowValue[i], file);
+                if (text)
+                {
+                  fputs(windowValue[i], file);
+                }
+                else
+                {
+                  fwrite(windowValue[i], sizeof(windowValue[i][0]), 1, file); // write 10 bytes from our buffer
+                }
+                nextPacket++;
+                char ackLine[9] = "";
+                memcpy(&ackLine[0], &i, 4);
+                memcpy(&ackLine[4], &receivingWindow[i], 4);
+                sendto(sockfd, ackLine, 9, 0,
+                       (struct sockaddr *)&serveraddr, sizeof(serveraddr));
               }
-              else
-              {
-                fwrite(windowValue[i], sizeof(windowValue[i][0]), 1, file); // write 10 bytes from our buffer
-              }
-              nextPacket++;
-              char ackLine[9] = "";
-              memcpy(&ackLine[0], &i, 4);
-              memcpy(&ackLine[4], &receivingWindow[i], 4);
-              sendto(sockfd, ackLine, 9, 0,
-                     (struct sockaddr *)&serveraddr, sizeof(serveraddr));
             }
           }
         }
