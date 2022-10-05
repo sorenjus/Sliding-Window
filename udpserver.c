@@ -136,7 +136,7 @@ int main(int argc, char **argv)
                             {
                                 printf("Timed out while waiting to receive\nResending data lines");
 
-                                for (int i = windowCounter; i < 5; ++i)
+                                for (int i = 0; i < 5; ++i)
                                 {
                                     char line[263] = "";
                                     memcpy(&line[0], &i, 4);
