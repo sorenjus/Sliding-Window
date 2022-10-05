@@ -38,7 +38,7 @@ int main(int argc, char **argv)
     // when an acknowledgement is received, store the acknowledgements windowCounter and file sequence
     int receivedWindowCounter = 0;
     int receivedSeqCount = 0;
-    char ackLine[8];
+    char ackLine[9];
 
     // the current data to be sent in the packet
     char windowValue[5][255];
@@ -100,7 +100,7 @@ int main(int argc, char **argv)
                         {
                             fgets(&windowValue[windowCounter][0], 255, file);
                         }
-                        else if(!text && !feof(file))
+                        else if (!text && !feof(file))
                         {
                             fread(&windowValue[windowCounter][0], sizeof(windowValue[windowCounter][0]), 1, file); // read
                         }
@@ -167,7 +167,7 @@ int main(int argc, char **argv)
                         }
                     }
                 } while (!feof(file) || (senderWindow[0] == -1 && senderWindow[1] == -1 && senderWindow[2] == -1 &&
-                         senderWindow[3] == -1 && senderWindow[4] == -1)); // reached the end of the file
+                                         senderWindow[3] == -1 && senderWindow[4] == -1)); // reached the end of the file
 
                 do
                 {
