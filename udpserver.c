@@ -206,8 +206,8 @@ int main(int argc, char **argv)
                             }
                         }
                     }
-                } while (senderWindow[0] != -1 && senderWindow[1] != -1 && senderWindow[2] != -1 &&
-                         senderWindow[3] != -1 && senderWindow[4] != -1);
+                } while (senderWindow[0] == -1 && senderWindow[1] == -1 && senderWindow[2] == -1 &&
+                         senderWindow[3] == -1 && senderWindow[4] == -1);
 
                 do
                 {
