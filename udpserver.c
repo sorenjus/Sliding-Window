@@ -93,7 +93,7 @@ int main(int argc, char **argv)
 
                 do
                 {
-                    if (senderWindow[windowCounter] == -1)
+                    if (senderWindow[windowCounter] == -1 && !feof(file))
                     {
                         if (text && !feof(file))
                         {
@@ -104,28 +104,25 @@ int main(int argc, char **argv)
                             fread(&windowValue[windowCounter][0], sizeof(windowValue[windowCounter][0]), 1, file); // read
                         }
 
-                        if (!feof(file))
+                        senderWindow[windowCounter] = fileSequence;
+
+                        char line[263] = "";
+                        memcpy(&line[0], &windowCounter, 4);
+                        memcpy(&line[4], &senderWindow[windowCounter], 4);
+                        memcpy(&line[8], &windowValue[windowCounter][0], 255);
+                        sendto(sockfd, line, 263, 0,
+                               (struct sockaddr *)&clientaddr, sizeof(clientaddr));
+
+                        printf("Sent packet at window %d\n", windowCounter);
+                        printf("Sequence number : %d\n", senderWindow[windowCounter]);
+                        printf("packet contents : %s\n", windowValue[windowCounter]);
+
+                        windowCounter++;
+                        fileSequence++;
+
+                        if (windowCounter == 5)
                         {
-                            senderWindow[windowCounter] = fileSequence;
-
-                            char line[263] = "";
-                            memcpy(&line[0], &windowCounter, 4);
-                            memcpy(&line[4], &senderWindow[windowCounter], 4);
-                            memcpy(&line[8], &windowValue[windowCounter][0], 255);
-                            sendto(sockfd, line, 263, 0,
-                                   (struct sockaddr *)&clientaddr, sizeof(clientaddr));
-
-                            printf("Sent packet at window %d\n", windowCounter);
-                            printf("Sequence number : %d\n", senderWindow[windowCounter]);
-                            printf("packet contents : %s\n", windowValue[windowCounter]);
-
-                            windowCounter++;
-                            fileSequence++;
-
-                            if (windowCounter == 5)
-                            {
-                                windowCounter = 0;
-                            }
+                            windowCounter = 0;
                         }
                     }
                     else
