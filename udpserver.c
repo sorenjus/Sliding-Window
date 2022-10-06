@@ -95,7 +95,6 @@ int main(int argc, char **argv)
                 {
                     if (senderWindow[windowCounter] == -1)
                     {
-
                         if (text && !feof(file))
                         {
                             fgets(&windowValue[windowCounter][0], 255, file);
@@ -105,25 +104,28 @@ int main(int argc, char **argv)
                             fread(&windowValue[windowCounter][0], sizeof(windowValue[windowCounter][0]), 1, file); // read
                         }
 
-                        senderWindow[windowCounter] = fileSequence;
-
-                        char line[263] = "";
-                        memcpy(&line[0], &windowCounter, 4);
-                        memcpy(&line[4], &senderWindow[windowCounter], 4);
-                        memcpy(&line[8], &windowValue[windowCounter][0], 255);
-                        sendto(sockfd, line, 263, 0,
-                               (struct sockaddr *)&clientaddr, sizeof(clientaddr));
-
-                        printf("Sent packet at window %d\n", windowCounter);
-                        printf("Sequence number : %d\n", senderWindow[windowCounter]);
-                        printf("packet contents : %s\n", windowValue[windowCounter]);
-
-                        windowCounter++;
-                        fileSequence++;
-
-                        if (windowCounter == 5)
+                        if (!feof(file))
                         {
-                            windowCounter = 0;
+                            senderWindow[windowCounter] = fileSequence;
+
+                            char line[263] = "";
+                            memcpy(&line[0], &windowCounter, 4);
+                            memcpy(&line[4], &senderWindow[windowCounter], 4);
+                            memcpy(&line[8], &windowValue[windowCounter][0], 255);
+                            sendto(sockfd, line, 263, 0,
+                                   (struct sockaddr *)&clientaddr, sizeof(clientaddr));
+
+                            printf("Sent packet at window %d\n", windowCounter);
+                            printf("Sequence number : %d\n", senderWindow[windowCounter]);
+                            printf("packet contents : %s\n", windowValue[windowCounter]);
+
+                            windowCounter++;
+                            fileSequence++;
+
+                            if (windowCounter == 5)
+                            {
+                                windowCounter = 0;
+                            }
                         }
                     }
                     else
@@ -165,16 +167,16 @@ int main(int argc, char **argv)
                                 if (senderWindow[receivedWindowCounter] == receivedSeqCount)
                                 {
                                     senderWindow[receivedWindowCounter] = -1;
+                                    char *thing;
+                                    thing = "";
+                                    memcpy(&windowValue[receivedWindowCounter][0], thing, 255);
+                                    printf("Return window value : %d\nReturned sequence number : %d\n\n", receivedWindowCounter, receivedSeqCount);
                                 }
-                                char *thing;
-                                thing = "";
-                                memcpy(&windowValue[receivedWindowCounter][0], thing, 255);
-                                printf("Return window value : %d\nReturned sequence number : %d\n\n", receivedWindowCounter, receivedSeqCount);
                             }
                         }
                     }
-                } while (!feof(file) || (senderWindow[0] != -1 && senderWindow[1] != -1 && senderWindow[2] != -1 &&
-                                         senderWindow[3] != -1 && senderWindow[4] != -1)); // reached the end of the file
+                } while (!feof(file) || (senderWindow[0] != -1 || senderWindow[1] != -1 || senderWindow[2] != -1 ||
+                                         senderWindow[3] != -1 || senderWindow[4] != -1)); // reached the end of the file
 
                 do
                 {
